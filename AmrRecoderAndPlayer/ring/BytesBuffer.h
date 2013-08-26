@@ -1,13 +1,13 @@
 //
-//  BinaryCircleBuffer.h
+//  BytesBuffer.h
 //  AmrRecoderAndPlayer
 //
 //  Created by lu gang on 8/26/13.
 //  Copyright (c) 2013 topcmm. All rights reserved.
 //
 
-#ifndef __AmrRecoderAndPlayer__BinaryCircleBuffer__
-#define __AmrRecoderAndPlayer__BinaryCircleBuffer__
+#ifndef __AmrRecoderAndPlayer__BytesBuffer__
+#define __AmrRecoderAndPlayer__BytesBuffer__
 
 #include <iostream>
 #include <memory>
@@ -15,40 +15,38 @@ typedef struct ChunkInfo* ChunkInfoRef;
 typedef struct PutBufferChunk* PutBufferChunkRef;
 typedef struct PopBufferChunk* PopBufferChunkRef;
 
-typedef void (*PutCallBackFun)(const PutBufferChunkRef, void* userData);
+typedef void (*PutCallBackFun)(void* userData, const ChunkInfoRef,  bool getTerminated);
 typedef void (*PopCallBackFun)(ChunkInfoRef, void* userData);
 
 struct ChunkInfo
 {
-    unsigned       m_capacity;
-    unsigned char* m_data;
-    unsigned       m_dataSize;
+    unsigned char* _data;
+    unsigned       _size;
 };
 
 struct PutBufferChunk : public ChunkInfo
 {
-    PutCallBackFun    m_callback;
-    void*          m_userData;
+    PutCallBackFun    _callback;
+    void*          _userData;
 };
 
 struct PopBufferChunk : public ChunkInfo
 {
     PopCallBackFun   m_callback;
     void*          m_userData;
-    int            m_fillDataSize;
 };
 
 
 
-class BinaryCircleBuffer
+class BytesBuffer
 {
 public:
-    BinaryCircleBuffer(size_t bufferSize);
+    BytesBuffer(size_t bufferSize);
     size_t put(unsigned char* data, size_t size, size_t timeout = 0);
     unsigned char* pop(size_t size, size_t timeout = 0);
     
 private:
-    std::auto_ptr<class BinaryCircleBuffer_context> _ctx;
+    std::auto_ptr<class BytesBuffer_context> _ctx;
 };
 
-#endif /* defined(__AmrRecoderAndPlayer__BinaryCircleBuffer__) */
+#endif /* defined(__AmrRecoderAndPlayer__BytesBuffer__) */

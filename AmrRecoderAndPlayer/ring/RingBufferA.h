@@ -19,7 +19,6 @@ typedef void (*PopCallBackFun)(ChunkInfoRef, void* userData, PopbufState state, 
 
 struct ChunkInfo
 {
-    unsigned       m_capacity;
     unsigned char* m_data;
     unsigned       m_dataSize;
 };
