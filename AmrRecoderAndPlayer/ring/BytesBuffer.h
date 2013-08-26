@@ -16,7 +16,7 @@ typedef struct PutBufferChunk* PutBufferChunkRef;
 typedef struct PopBufferChunk* PopBufferChunkRef;
 
 typedef void (*PutCallBackFun)(void* userData, const ChunkInfoRef,  bool getTerminated);
-typedef void (*PopCallBackFun)(ChunkInfoRef, void* userData);
+typedef void (*PopCallBackFun)(void* userData, const ChunkInfoRef,  bool getTerminated);
 
 struct ChunkInfo
 {
@@ -32,8 +32,8 @@ struct PutBufferChunk : public ChunkInfo
 
 struct PopBufferChunk : public ChunkInfo
 {
-    PopCallBackFun   m_callback;
-    void*          m_userData;
+    PopCallBackFun   _callback;
+    void*          _userData;
 };
 
 

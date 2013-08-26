@@ -29,12 +29,13 @@ public:
     void terminatePut();
     void terminateGet();
 private:
-    const size_t _totalBufferBytes;
+    const  size_t _totalBufferSize;
     size_t _totalFreeSize;
     size_t _feedBeginIndex;
-    size_t _feedEndIndex;
+    size_t _feedCapacity;
+    
     size_t _eatBeginIndex;
-    size_t _eatEndIndex;
+    size_t _eatCapacity;
     Monitor<RecMutex> _monitor;
     unsigned char* _buffer;
     size_t _magnification;
@@ -46,12 +47,11 @@ private:
 };
 
 BytesBuffer_context::BytesBuffer_context(size_t bufferSize) :
-_totalBufferBytes(bufferSize),
-_totalFreeSize(bufferSize),
+_totalBufferSize(bufferSize),
 _feedBeginIndex(0),
-_feedEndIndex(0),
+_feedCapacity(bufferSize),
 _eatBeginIndex(0),
-_eatEndIndex(0),
+_eatCapacity(0),
 _putTerminated(false),
 _getTerminated(false)
 {
@@ -62,7 +62,7 @@ void BytesBuffer_context::put(size_t size, PutBufferChunkRef cbChunk)
 {
     {
         Monitor<RecMutex>::Lock lock(_monitor);
-        while(size > _totalFreeSize && !_getTerminated) {
+        while( size > _feedCapacity && !_getTerminated) {
             _monitor.wait();
         }
     }
@@ -76,30 +76,36 @@ void BytesBuffer_context::put(size_t size, PutBufferChunkRef cbChunk)
     
     bool truncated = false;
     size_t truncatedSize = 0;
-    {
-        Monitor<RecMutex>::Lock lock(_monitor);
-        if (_feedBeginIndex + size > _totalBufferBytes) {
-            truncated = true;
-            truncatedSize = _totalBufferBytes - _feedBeginIndex;
-            
-        } else {
-            _eatEndIndex += size;
-        }
+
+    //at this moment , _feedCapacity maybe increased, but do not infect the result;
+    if (_totalBufferSize < _feedBeginIndex + _feedCapacity) {
+        truncated = true;
+        truncatedSize = _totalBufferSize - _feedBeginIndex;
+        
     }
     
     if (truncated) {        
         cbChunk->_data = (unsigned char*)malloc(size);
         cbChunk->_size = size;
+        //give outsize the continus buffer
         cbChunk->_callback(cbChunk->_userData, cbChunk, false);
+        //refill
         memcpy(_buffer+_feedBeginIndex, cbChunk->_data, truncatedSize);
         memcpy(_buffer, cbChunk->_data, size-truncatedSize);
-        free(cbChunk->_data);
-
     }
     else {
         cbChunk->_data = _buffer+_feedBeginIndex;
         cbChunk->_size = size;
         cbChunk->_callback(cbChunk->_userData, cbChunk, false);
+    }
+    
+    {
+        Monitor<RecMutex>::Lock lock(_monitor);
+        _eatCapacity += size;
+        _feedBeginIndex = (_feedBeginIndex + size)%_totalBufferSize;
+        _feedCapacity -= size;
+        //check and notify
+        _monitor.notify();
     }
 }
 
@@ -107,10 +113,19 @@ void BytesBuffer_context::get(size_t size, PopBufferChunkRef cbChunk)
 {
     {
         Monitor<RecMutex>::Lock lock(_monitor);
-        while(size > _totalFreeSize && !_getTerminated) {
+        while(size > _eatCapacity && !_putTerminated) {
             _monitor.wait();
         }
     }
+    
+    if (_putTerminated) {
+        cbChunk->_data = NULL;
+        cbChunk->_size = 0;
+        cbChunk->_callback(cbChunk->_userData, cbChunk, true);
+        return;
+    }
+    
+    
 }
 
 
