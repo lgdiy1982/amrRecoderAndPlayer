@@ -15,5 +15,8 @@
 @end
 
 @interface AmrFileRecoder : NSObject
-@property (nonatomic)
++ (id) sharedInstance;
+- (void) startRecode;
+- (void) startRecodeWithFilePath:(NSString*) filepath;
+- (void) stopRecode;
 @end

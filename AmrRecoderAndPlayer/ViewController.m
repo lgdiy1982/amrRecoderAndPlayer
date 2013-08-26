@@ -7,8 +7,18 @@
 //
 
 #import "ViewController.h"
+#import "AmrFileRecoder.h"
+@interface ViewController () <UITableViewDataSource, UITableViewDelegate>
+@property (weak, nonatomic) IBOutlet UIButton *playButton;
+- (IBAction)playOrStop:(id)sender;
 
-@interface ViewController ()
+@property (weak, nonatomic) IBOutlet UIButton *recodeButton;
+- (IBAction)startRecord:(id)sender;
+- (IBAction)stopRecord:(id)sender;
+- (IBAction)cancelRecord:(id)sender;
+
+
+@property (weak, nonatomic) IBOutlet UITableView *filesTabelView;
 
 @end
 
@@ -25,5 +35,29 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+
+- (IBAction)playOrStop:(id)sender {
+    
+}
+
+
+- (IBAction)startRecord:(id)sender {
+//    [self.recodeButton setTitle:@"停止" forState:UIControlStateNormal];
+    [[AmrFileRecoder sharedInstance] startRecodeWithFilePath:@""];
+}
+
+- (IBAction)stopRecord:(id)sender {
+//    [self.recodeButton setTitle:@"开始" forState:UIControlStateNormal];
+//    [[AmrFileRecoder sharedInstance] stopRecode];
+}
+
+- (IBAction)cancelRecord:(id)sender {
+    
+}
+
+#pragma -mark tableview delegate
+
+#pragma -mark tableview datasource
+
 
 @end
