@@ -2,6 +2,7 @@
 #import <AudioToolbox/AudioToolbox.h>
 #include <BytesBuffer.h>
 #include <IceUtil/IceUtil.h>
+#include <SafePrinter.h>
 //#include <CoreAudio/CoreAudio.h>
 
 //#include "CAStreamBasicDescription.h"
@@ -18,7 +19,7 @@ __LINE__\
 fflush(stdout);\
 return err; \
 }         
-
+extern SafePrinterPtr g_p;
 
 void CheckError(OSStatus error, const char *operation)
 {
@@ -64,12 +65,12 @@ public:
     bool isRunning();
     static OSStatus recordingCallback(void *inRefCon,
                              AudioUnitRenderActionFlags *ioActionFlags, 
-                             const AudioTimeStamp *inTimeStamp, 
+                             const AudioTimeStamp *inTimeStamp,
                              UInt32 inBusNumber, 
                              UInt32 inNumberFrames, 
                              AudioBufferList *ioData);
     
-    static size_t (*FeedCallBackFun)(void* userData, const ChunkInfoRef,  bool terminated);
+    static size_t feedCallBackFun(void* userData, const ChunkInfoRef,  bool terminated);
 private:
     OSStatus enableIO();
     OSStatus callbackSetup();
@@ -82,6 +83,8 @@ private:
 	AudioComponentInstance _audioUnit;
 	AudioBufferList _inputBuffer;   // this will hold the latest data from the microphone   
     int             _isInitialized;
+    AudioStreamBasicDescription audioFormat;
+    BufferChunk chunk;
 #ifdef RECODESTREAM
     FILE* _recodestreamfile;
 #endif    
@@ -161,7 +164,7 @@ void AudioInputUnit_context::initialize(float sampleRate, int channel, int sampl
 	checkStatus(status);
 	
 	// Describe format
-	AudioStreamBasicDescription audioFormat;
+	
 	audioFormat.mSampleRate			= sampleRate;
 	audioFormat.mFormatID			= kAudioFormatLinearPCM;
 	audioFormat.mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsAlignedHigh | kAudioFormatFlagIsPacked;
@@ -246,9 +249,38 @@ bool AudioInputUnit_context::isRunning()
 }
 
 
+typedef struct AUUserData{
+    void *inRefCon;
+    AudioUnitRenderActionFlags *ioActionFlags;
+    AudioTimeStamp *inTimeStamp;
+    UInt32 inBusNumber;
+    UInt32 inNumberFrames;
+    AudioBufferList * ioData;
+} *AUUserDataRef;
 
 
-
+size_t AudioInputUnit_context::feedCallBackFun(void* userData, const ChunkInfoRef info,  bool terminated)
+{
+    AUUserDataRef ref = (AUUserDataRef)userData;
+    AudioInputUnit_context *This = (AudioInputUnit_context*)ref->inRefCon;
+    This->_inputBuffer.mBuffers[0].mNumberChannels = 1;
+    // Put buffer in a AudioBufferList
+    //    unsigned limitedSize;
+	This->_inputBuffer.mNumberBuffers = 1;
+	This->_inputBuffer.mBuffers[0].mNumberChannels = 1;
+	This->_inputBuffer.mBuffers[0].mDataByteSize = info->_size;
+    This->_inputBuffer.mBuffers[0].mData = info->_data;
+    //Get the new audio data
+    OSStatus err = noErr;
+	err = AudioUnitRender(This->_audioUnit,
+                          ref->ioActionFlags,
+                          ref->inTimeStamp,
+                          ref->inBusNumber,
+                          ref->inNumberFrames, //# of frames requested
+                          &This->_inputBuffer );// Audio Buffer List to hold data
+	CheckError(err, "AudioInputUnit_context::InputProc");
+    return info->_size;
+}
 
 OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
                                   AudioUnitRenderActionFlags *ioActionFlags,
@@ -257,19 +289,25 @@ OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
                                   UInt32 inNumberFrames,
                                   AudioBufferList * ioData)
 {
-    OSStatus err = noErr;
+    
 	
 	AudioInputUnit_context *This = (AudioInputUnit_context *)inRefCon;
+    g_p->printf("recordingCallback %d  %d %x\n", inBusNumber, inNumberFrames, ioData);
+    AUUserDataRef ref = new AUUserData();
+    ref->inRefCon = inRefCon;
+    ref->ioActionFlags = ioActionFlags;
+    ref->inBusNumber = inBusNumber;
+    ref->inNumberFrames = inNumberFrames;
+    ref->ioData = ioData;
     
     
-    //This->_buffer->feed(size_t size, <#BufferChunkRef cbChunk#>)
-    // Put buffer in a AudioBufferList
-//    unsigned limitedSize;
-//	This->_inputBuffer.mNumberBuffers = 1;
-//	This->_inputBuffer.mBuffers[0].mNumberChannels = 1;
-//	This->_inputBuffer.mBuffers[0].mDataByteSize = limitedSize = inNumberFrames * 2;
-//	This->_inputBuffer.mBuffers[0].mData = This->_ring->get(limitedSize, 0.1*1000000);
-//    
+    This->chunk._callback = AudioInputUnit_context::feedCallBackFun;
+    This->chunk._userData = ref;
+    This->_buffer->feed(inNumberFrames * 2, &This->chunk);
+
+
+//	This->_inputBuffer.mBuffers[0].mData = 
+//
 //    if (0 == This->_inputBuffer.mBuffers[0].mData)
 //    {
 //        printf("input get buffer expired!! direct return\n");
@@ -277,8 +315,9 @@ OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
 //    }
 //    //else 
 //    
-//    
-//	//Get the new audio data
+//
+    
+	//Get the new audio data
 //	err = AudioUnitRender(This->_audioUnit,
 //                          ioActionFlags,
 //                          inTimeStamp, 
@@ -286,12 +325,12 @@ OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
 //                          inNumberFrames, //# of frames requested
 //                          &This->_inputBuffer );// Audio Buffer List to hold data
 //	CheckError(err, "AudioInputUnit_context::InputProc");
-//    
+//
 //#ifdef RECODESTREAM
 //    fwrite(This->_inputBuffer.mBuffers[0].mData, limitedSize, 1, This->_recodestreamfile);
 //#endif    
 //    This->_ring->put(limitedSize);
-	return err;
+	return noErr;
 }
 
 

@@ -9,7 +9,9 @@
 #import "AppDelegate.h"
 
 #import "ViewController.h"
+#include <SafePrinter.h>
 
+SafePrinterPtr g_p;
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
@@ -20,7 +22,8 @@
     self.window.rootViewController = self.viewController;
     [self.window makeKeyAndVisible];
     
-    
+    g_p = new SafePrinter();
+    g_p->start();
     return YES;
 }
 

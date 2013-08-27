@@ -7,8 +7,6 @@
 //
 
 #include "SafePrinter.h"
-
-
 SafePrinter::SafePrinter() : _destroy(false), _waitforFinished(false) {}
 
 
@@ -35,11 +33,13 @@ void SafePrinter::run()
     while (true) {
         {
             Monitor<Mutex>::Lock lock(_monitor);
-            while ((_l.empty() && !_destroy) || (!_l.empty()&&_waitforFinished) ) {
+            while ((_l.empty() && !_destroy)) {
                 _monitor.wait();
             }
         }
-        
+        if(_destroy)
+            break;
+
         string  msg;//
         {
             Monitor<Mutex>::Lock lock(_monitor);
