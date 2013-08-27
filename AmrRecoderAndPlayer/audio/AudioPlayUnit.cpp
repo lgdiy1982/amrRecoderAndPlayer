@@ -89,8 +89,8 @@ public:
                                      UInt32 inBusNumber, 
                                      UInt32 inNumberFrames, 
                                      AudioBufferList *ioData);     
-    static void popBufferCallback(ChunkInfoRef ref, void* userData, PopbufState state, unsigned fillneedsize);
-    void popBufferCallback(ChunkInfoRef ref, PopbufState state, unsigned fillneedsize);
+//    static void popBufferCallback(ChunkInfoRef ref, void* userData, PopbufState state, unsigned fillneedsize);
+//    void popBufferCallback(ChunkInfoRef ref, PopbufState state, unsigned fillneedsize);
 private:
     OSStatus enableIO();
     OSStatus callbackSetup();
@@ -98,13 +98,13 @@ private:
     OSStatus setupBuffers();
     inline void makeBufferSilent (AudioBufferList * ioData);
 private:
-    std::auto_ptr<RingBufferA> _ring;
+//    std::auto_ptr<RingBufferA> _ring;
 	AudioComponentInstance _audioUnit;
 	//AudioBufferList _inputBuffer;   // this will hold the latest data from the microphone    
     AudioBufferList * _curOutputABL;
     unsigned          _fillOffset;
     unsigned char*    _tempBuf;
-    PopBufferChunk    _popchunk;
+//    PopBufferChunk    _popchunk;
     unsigned          _totalreceivedSampleSize;
     bool              _isInitialized;
     
@@ -269,12 +269,12 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
     assert(ioData->mNumberBuffers == 1);
     
 
-    This->_popchunk.m_callback = AudioPlayUnit_context::popBufferCallback;
-    This->_popchunk.m_userData = This;
-    This->_popchunk.m_fillDataSize = inNumberFrames*2;
-    
-    
-    This->_ring->pop(&(This->_popchunk ), 0.1*1000000 );      	
+//    This->_popchunk.m_callback = AudioPlayUnit_context::popBufferCallback;
+//    This->_popchunk.m_userData = This;
+//    This->_popchunk.m_fillDataSize = inNumberFrames*2;
+//    
+//    
+//    This->_ring->pop(&(This->_popchunk ), 0.1*1000000 );      	
     return noErr;
 }
 
@@ -282,87 +282,87 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
 
 
 
-
-void AudioPlayUnit_context::popBufferCallback(ChunkInfoRef ref, void* userData, PopbufState state, unsigned fillneedsize)
-{
-    AudioPlayUnit_context* This = (AudioPlayUnit_context*)userData;
-    This->popBufferCallback(ref, state, fillneedsize);
-}
+//
+//void AudioPlayUnit_context::popBufferCallback(ChunkInfoRef ref, void* userData, PopbufState state, unsigned fillneedsize)
+//{
+//    AudioPlayUnit_context* This = (AudioPlayUnit_context*)userData;
+//    This->popBufferCallback(ref, state, fillneedsize);
+//}
 
 //#define TESTPOPDATA
-void AudioPlayUnit_context::popBufferCallback(ChunkInfoRef ref, PopbufState state, unsigned fillneedsize)
-{
-#ifdef TESTPOPDATA    
-    static unsigned totalcount = 0;
-    static IceUtil::Time _recievedTimeLastTime;
-    IceUtil::Time receivedTime = IceUtil::Time().now();
-    if (_recievedTimeLastTime == IceUtil::Time() && _recievedTimeLastTime != receivedTime) 
-    {
-        _recievedTimeLastTime = receivedTime;
-    }
-    else
-    {               
-        IceUtil::Time costTime = receivedTime - _recievedTimeLastTime;
-        if (costTime.toSeconds() > 2) {
-            totalcount = 0;
-        }
-        _recievedTimeLastTime = receivedTime;
-    }
-    
-#endif
-    if (e_whole == state) 
-    {
-        assert(ref->m_dataSize == fillneedsize);
-        memcpy(_curOutputABL->mBuffers[0].mData,  ref->m_data,  fillneedsize);
-        _curOutputABL->mBuffers[0].mDataByteSize = fillneedsize;
-        ///////////////////////////////////////////////////////////////////////
-#ifdef TESTPOPDATA      
-        
-        for (unsigned i=0; i <ref->m_dataSize; ++i) 
-        {            
-            if (totalcount++%16 == 0) 
-                printf("\n%0x0h:", totalcount/16);
-            displayHexBin( ref->m_data[i]);
-            printf(" ");
-        }        
-#endif
-        ///////////////////////////////////////////////////////////////////////
-        return ;
-    }
-    
-    if (_tempBuf == NULL) {
-       _tempBuf = (unsigned char*)malloc(fillneedsize);
-    }
-    
-
-    
-    if (e_start == state) {
-        _fillOffset = 0;
-    }
-    
-    memcpy(_tempBuf+_fillOffset, ref->m_data, ref->m_dataSize);
-    _fillOffset += ref->m_dataSize;
-    
-    if (e_end == state) 
-    {
-        assert(_fillOffset == fillneedsize);
-        memcpy(_curOutputABL->mBuffers[0].mData, _tempBuf, fillneedsize );
-        _curOutputABL->mBuffers[0].mDataByteSize = fillneedsize;
+//void AudioPlayUnit_context::popBufferCallback(ChunkInfoRef ref, PopbufState state, unsigned fillneedsize)
+//{
+//#ifdef TESTPOPDATA    
+//    static unsigned totalcount = 0;
+//    static IceUtil::Time _recievedTimeLastTime;
+//    IceUtil::Time receivedTime = IceUtil::Time().now();
+//    if (_recievedTimeLastTime == IceUtil::Time() && _recievedTimeLastTime != receivedTime) 
+//    {
+//        _recievedTimeLastTime = receivedTime;
+//    }
+//    else
+//    {               
+//        IceUtil::Time costTime = receivedTime - _recievedTimeLastTime;
+//        if (costTime.toSeconds() > 2) {
+//            totalcount = 0;
+//        }
+//        _recievedTimeLastTime = receivedTime;
+//    }
+//    
+//#endif
+//    if (e_whole == state) 
+//    {
+//        assert(ref->m_dataSize == fillneedsize);
+//        memcpy(_curOutputABL->mBuffers[0].mData,  ref->m_data,  fillneedsize);
+//        _curOutputABL->mBuffers[0].mDataByteSize = fillneedsize;
 //        ///////////////////////////////////////////////////////////////////////
-#ifdef TESTPOPDATA       
-        static unsigned totalcount = 0;
-        for (unsigned i=0; i < fillneedsize; ++i) 
-        {            
-            if (totalcount++%16 == 0) 
-                printf("\n%0x0h:", totalcount/16);
-            displayHexBin( _tempBuf[i]);
-            printf(" ");
-        }        
-#endif
-//        ///////////////////////////////////////////////////////////////////////        
-    }
-    
-}
+//#ifdef TESTPOPDATA      
+//        
+//        for (unsigned i=0; i <ref->m_dataSize; ++i) 
+//        {            
+//            if (totalcount++%16 == 0) 
+//                printf("\n%0x0h:", totalcount/16);
+//            displayHexBin( ref->m_data[i]);
+//            printf(" ");
+//        }        
+//#endif
+//        ///////////////////////////////////////////////////////////////////////
+//        return ;
+//    }
+//    
+//    if (_tempBuf == NULL) {
+//       _tempBuf = (unsigned char*)malloc(fillneedsize);
+//    }
+//    
+//
+//    
+//    if (e_start == state) {
+//        _fillOffset = 0;
+//    }
+//    
+//    memcpy(_tempBuf+_fillOffset, ref->m_data, ref->m_dataSize);
+//    _fillOffset += ref->m_dataSize;
+//    
+//    if (e_end == state) 
+//    {
+//        assert(_fillOffset == fillneedsize);
+//        memcpy(_curOutputABL->mBuffers[0].mData, _tempBuf, fillneedsize );
+//        _curOutputABL->mBuffers[0].mDataByteSize = fillneedsize;
+////        ///////////////////////////////////////////////////////////////////////
+//#ifdef TESTPOPDATA       
+//        static unsigned totalcount = 0;
+//        for (unsigned i=0; i < fillneedsize; ++i) 
+//        {            
+//            if (totalcount++%16 == 0) 
+//                printf("\n%0x0h:", totalcount/16);
+//            displayHexBin( _tempBuf[i]);
+//            printf(" ");
+//        }        
+//#endif
+////        ///////////////////////////////////////////////////////////////////////        
+//    }
+//    
+//}
 
 
 
@@ -414,8 +414,8 @@ OSStatus AudioPlayUnit_context::stop()
 
 OSStatus AudioPlayUnit_context::setupBuffers()
 {
-    _ring = std::auto_ptr<RingBufferA>(new RingBufferA(2 << 11, 2 << 2) );
-    return noErr;    
+//    _ring = std::auto_ptr<RingBufferA>(new RingBufferA(2 << 11, 2 << 2) );
+    return noErr;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -465,18 +465,18 @@ bool AudioPlayUnit::isRunning()
 
 void AudioPlayUnit::flush()
 {
-    _ctx->_ring->flush();
+//    _ctx->_ring->flush();
 }
 
 
 unsigned char* AudioPlayUnit::getBuffer(unsigned & limitSize, unsigned waitTimeMicroSeconds)
 {
-    return _ctx->_ring->get(limitSize, waitTimeMicroSeconds);
+//    return _ctx->_ring->get(limitSize, waitTimeMicroSeconds);
 }
 
 void AudioPlayUnit::fillBuffer(unsigned bufferSize)
 {
-    _ctx->_ring->put(bufferSize);
+//    _ctx->_ring->put(bufferSize);
 }
 
 AudioPlayUnit::~AudioPlayUnit()

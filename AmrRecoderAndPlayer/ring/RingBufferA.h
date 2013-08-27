@@ -28,6 +28,7 @@ struct PutBufferChunk : public ChunkInfo
 {
     PutCallBackFun    m_callback;
     void*          m_userData;
+    size_t          m_capacity;
 };
 
 struct PopBufferChunk : public ChunkInfo

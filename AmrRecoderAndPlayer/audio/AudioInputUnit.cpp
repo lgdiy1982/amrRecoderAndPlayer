@@ -1,5 +1,7 @@
 #include "AudioInputUnit.h"
 #import <AudioToolbox/AudioToolbox.h>
+#include <BytesBuffer.h>
+#include <IceUtil/IceUtil.h>
 //#include <CoreAudio/CoreAudio.h>
 
 //#include "CAStreamBasicDescription.h"
@@ -46,48 +48,6 @@ void checkStatus(int status){
 	}
 }
 
-template <class T>
-void displayHexBin(const T& v, bool hex = true)
-{
-    const unsigned char c2h[] = "0123456789ABCDEF";
-    const unsigned char c2b[] = "01";
-    
-    unsigned char* p = (unsigned char*)&v;
-    char* buf = new char [sizeof(T)*2+1];
-    char* ptmp = buf;
-    if(hex)
-    {
-        p = p + sizeof(T)-1;
-        for (size_t i = 0; i < sizeof(T); i++, --p)
-        {
-            *buf++ = c2h[*p >> 4];
-            *buf++ = c2h[*p & 0x0F];
-        }
-        *buf = '\0';
-        //printf("hex format displayed as %s\n", ptmp);
-        printf("%s", ptmp);
-        
-        delete [] ptmp;
-        
-    }
-    else
-    {
-        p = (unsigned char*)&v;
-        p = p + sizeof(T)-1;
-        ptmp = buf = new char [sizeof(T)*8+1];
-        for (size_t i = 0; i < sizeof(T); i++, --p)
-        {
-            for (int j = 0; j < 8; j++)
-                *buf++ = c2b[(*p >> (7-j)) & 0x1];
-        }
-        *buf = '\0';
-        //printf("bin format displayed as %s\n", ptmp);
-        printf("%s", ptmp);
-        delete [] ptmp;
-    }
-    
-}
-
 //#define RECODESTREAM
 class AudioInputUnit_context
 {
@@ -102,12 +62,14 @@ public:
     OSStatus start();
     OSStatus stop();
     bool isRunning();
-    static OSStatus recordingCallback(void *inRefCon, 
+    static OSStatus recordingCallback(void *inRefCon,
                              AudioUnitRenderActionFlags *ioActionFlags, 
                              const AudioTimeStamp *inTimeStamp, 
                              UInt32 inBusNumber, 
                              UInt32 inNumberFrames, 
                              AudioBufferList *ioData);
+    
+    static size_t (*FeedCallBackFun)(void* userData, const ChunkInfoRef,  bool terminated);
 private:
     OSStatus enableIO();
     OSStatus callbackSetup();
@@ -115,7 +77,8 @@ private:
     OSStatus setupBuffers();
     inline void makeBufferSilent (AudioBufferList * ioData);
 private:
-    std::auto_ptr<RingBufferA> _ring;
+//    std::auto_ptr<RingBufferA> _ring;
+    BytesBufferPtr _buffer;
 	AudioComponentInstance _audioUnit;
 	AudioBufferList _inputBuffer;   // this will hold the latest data from the microphone   
     int             _isInitialized;
@@ -298,68 +261,71 @@ OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
 	
 	AudioInputUnit_context *This = (AudioInputUnit_context *)inRefCon;
     
+    
+    //This->_buffer->feed(size_t size, <#BufferChunkRef cbChunk#>)
     // Put buffer in a AudioBufferList
-    unsigned limitedSize;
-	This->_inputBuffer.mNumberBuffers = 1;
-	This->_inputBuffer.mBuffers[0].mNumberChannels = 1;
-	This->_inputBuffer.mBuffers[0].mDataByteSize = limitedSize = inNumberFrames * 2;
-	This->_inputBuffer.mBuffers[0].mData = This->_ring->get(limitedSize, 0.1*1000000);
-    
-    if (0 == This->_inputBuffer.mBuffers[0].mData)
-    {
-        printf("input get buffer expired!! direct return\n");
-        return err;
-    }
-    //else 
-    
-    
-	//Get the new audio data
-	err = AudioUnitRender(This->_audioUnit,
-                          ioActionFlags,
-                          inTimeStamp, 
-                          inBusNumber,     
-                          inNumberFrames, //# of frames requested
-                          &This->_inputBuffer );// Audio Buffer List to hold data
-	CheckError(err, "AudioInputUnit_context::InputProc");
-    
-#ifdef RECODESTREAM
-    fwrite(This->_inputBuffer.mBuffers[0].mData, limitedSize, 1, This->_recodestreamfile);
-#endif    
-    This->_ring->put(limitedSize);
+//    unsigned limitedSize;
+//	This->_inputBuffer.mNumberBuffers = 1;
+//	This->_inputBuffer.mBuffers[0].mNumberChannels = 1;
+//	This->_inputBuffer.mBuffers[0].mDataByteSize = limitedSize = inNumberFrames * 2;
+//	This->_inputBuffer.mBuffers[0].mData = This->_ring->get(limitedSize, 0.1*1000000);
+//    
+//    if (0 == This->_inputBuffer.mBuffers[0].mData)
+//    {
+//        printf("input get buffer expired!! direct return\n");
+//        return err;
+//    }
+//    //else 
+//    
+//    
+//	//Get the new audio data
+//	err = AudioUnitRender(This->_audioUnit,
+//                          ioActionFlags,
+//                          inTimeStamp, 
+//                          inBusNumber,     
+//                          inNumberFrames, //# of frames requested
+//                          &This->_inputBuffer );// Audio Buffer List to hold data
+//	CheckError(err, "AudioInputUnit_context::InputProc");
+//    
+//#ifdef RECODESTREAM
+//    fwrite(This->_inputBuffer.mBuffers[0].mData, limitedSize, 1, This->_recodestreamfile);
+//#endif    
+//    This->_ring->put(limitedSize);
 	return err;
 }
 
 
-
-
-OSStatus AudioInputUnit_context::setupFomart()
-{
-	// Describe format
-	AudioStreamBasicDescription audioFormat;
-	audioFormat.mSampleRate			= 22050.00;
-	audioFormat.mFormatID			= kAudioFormatLinearPCM;
-	audioFormat.mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
-	audioFormat.mFramesPerPacket	= 1;
-	audioFormat.mChannelsPerFrame	= 1;
-	audioFormat.mBitsPerChannel		= 16;
-	audioFormat.mBytesPerPacket		= 2;
-	audioFormat.mBytesPerFrame		= 2;
-	
-    OSStatus err = noErr;
-	// Apply format
-	err = AudioUnitSetProperty(_audioUnit, 
-								  kAudioUnitProperty_StreamFormat, 
-								  kAudioUnitScope_Input, 
-								  kInputBus, 
-								  &audioFormat, 
-								  sizeof(audioFormat));
-    return err;
-}
+//
+//
+//OSStatus AudioInputUnit_context::setupFomart()
+//{
+//	// Describe format
+//	AudioStreamBasicDescription audioFormat;
+//	audioFormat.mSampleRate			= 22050.00;
+//	audioFormat.mFormatID			= kAudioFormatLinearPCM;
+//	audioFormat.mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
+//	audioFormat.mFramesPerPacket	= 1;
+//	audioFormat.mChannelsPerFrame	= 1;
+//	audioFormat.mBitsPerChannel		= 16;
+//	audioFormat.mBytesPerPacket		= 2;
+//	audioFormat.mBytesPerFrame		= 2;
+//	
+//    OSStatus err = noErr;
+//	// Apply format
+//	err = AudioUnitSetProperty(_audioUnit, 
+//								  kAudioUnitProperty_StreamFormat, 
+//								  kAudioUnitScope_Input, 
+//								  kInputBus, 
+//								  &audioFormat, 
+//								  sizeof(audioFormat));
+//    return err;
+//}
 
 OSStatus AudioInputUnit_context::setupBuffers()
 {
-    _ring = std::auto_ptr<RingBufferA>(new RingBufferA(2 << 10, 2 << 2) );
-    return noErr;    
+    _buffer = new BytesBuffer(2<<10);
+//    _ring = std::auto_ptr<RingBufferA>(new RingBufferA(2 << 10, 2 << 2) );
+    return noErr;
 }
 
 
@@ -437,14 +403,14 @@ bool AudioInputUnit::isRunning()
 
 void AudioInputUnit::flush()
 {
-    _ctx->_ring->flush();
+//    _ctx->_ring->flush();
 }
 
 
-bool AudioInputUnit::getData(PopBufferChunkRef chunkref, size_t waitMicroSeconds )
-{
-    return _ctx->_ring->pop(chunkref, waitMicroSeconds);
-}
+//bool AudioInputUnit::getData(PopBufferChunkRef chunkref, size_t waitMicroSeconds )
+//{
+////    return _ctx->_ring->pop(chunkref, waitMicroSeconds);
+//}
 
 AudioInputUnit::~AudioInputUnit()
 {

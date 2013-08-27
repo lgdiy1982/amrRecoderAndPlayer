@@ -28,17 +28,17 @@ public:
     void closeFile();
     virtual void run();
     virtual ~EncodeThread();
-    friend void myPopCallBackFun(ChunkInfoRef, void* userData, PopbufState state, unsigned fillneedSize);
+//    friend void myPopCallBackFun(ChunkInfoRef, void* userData, PopbufState state, unsigned fillneedSize);
 private:
-    PopBufferChunk  chunk;
+//    PopBufferChunk  chunk;
     std::string _filepath;
     void * armEncodeState;
 };
 
 typedef IceUtil::Handle<EncodeThread> EncodeThreadPtr;
 
-void myPopCallBackFun(ChunkInfoRef ref, void* userData, PopbufState state, unsigned fillneedSize)
-{
+//void myPopCallBackFun(ChunkInfoRef ref, void* userData, PopbufState state, unsigned fillneedSize)
+//{
 //    EncodeThread *thiz = (EncodeThread*)userData;
 //    //encode
 //    enum Mode req_mode;
@@ -52,13 +52,13 @@ void myPopCallBackFun(ChunkInfoRef ref, void* userData, PopbufState state, unsig
 //    
 //    int ret = Encoder_Interface_Encode(thiz->armEncodeState, req_mode, input, output, 0);
 //    std::cout << (size_t)state << "   " << ref->m_dataSize << std::endl;
-}
+//}
 
 EncodeThread::EncodeThread(const std::string& filepath) :_filepath(filepath)
 {
-    chunk.m_callback = myPopCallBackFun;
-    chunk.m_userData = this;
-    chunk.m_fillDataSize = 160;
+//    chunk.m_callback = myPopCallBackFun;
+//    chunk.m_userData = this;
+//    chunk.m_fillDataSize = 160;
 }
 
 void EncodeThread::run()
@@ -67,7 +67,7 @@ void EncodeThread::run()
     int dtx = 0;
     armEncodeState = Encoder_Interface_init(dtx);
     while (1) {
-        AudioInputUnit::instance().getData(&chunk, 0.1*1000000);
+//        AudioInputUnit::instance().getData(&chunk, 0.1*1000000);
     }
     Encoder_Interface_exit(&armEncodeState);
 }

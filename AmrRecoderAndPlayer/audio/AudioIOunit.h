@@ -5,7 +5,7 @@
 #include <AudioToolbox/AudioToolbox.h>
 #include <AudioUnit/AudioUnit.h>
 #include <memory>
-#include "RingBufferA.h"
+//#include "RingBufferA.h"
 
 class AudioIOunit 
 {
@@ -18,7 +18,7 @@ public:
     void stopRec();
     void flushRecBuffers();
     bool isRecRunning();
-    bool popRecodeData(PopBufferChunkRef chunkref, size_t waitMicroSeconds = 0);
+//    bool popRecodeData(PopBufferChunkRef chunkref, size_t waitMicroSeconds = 0);
     
     
 //   output

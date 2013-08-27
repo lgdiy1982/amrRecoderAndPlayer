@@ -17,67 +17,6 @@ using namespace std;
 //#define _verbose
 
 
-class Terminal : public IceUtil::Thread
-{
-public:
-    Terminal();
-    void printf(const char* format, ...);
-    void run();
-    void destroy();
-private:
-    list<string> _l;
-    Monitor<Mutex> _monitor;
-    bool _destroy;
-};
-typedef IceUtil::Handle<Terminal> TerminalPtr;
-
-Terminal::Terminal() : _destroy(false) {}
-
-
-void Terminal::printf(const char* format, ...)
-{
-    char buf[128];
-    bzero(buf, 128);
-    va_list vl;
-    va_start(vl, format);
-    vsnprintf(buf, 128, format, vl);
-    va_end(vl);
-    Monitor<Mutex>::Lock lock(_monitor);
-    if (_l.empty()) {        
-        _monitor.notify();
-    }
-    _l.push_front(string(buf) );
-}
-
-
-
-void Terminal::run()
-{
-    while (true) {
-        {
-            Monitor<Mutex>::Lock lock(_monitor);
-            while (_l.empty() && !_destroy) {
-                _monitor.wait();
-            }
-        }
-        
-        string  msg;//
-        {
-            Monitor<Mutex>::Lock lock(_monitor);
-            msg = _l.back();
-            _l.pop_back();
-        }
-        cout << msg ;
-    }
-}
-
-
-void Terminal::destroy()
-{
-    
-}
-
-
 
 /////////////
 
@@ -535,8 +474,6 @@ private:
     size_t _lastlimitCapacity;
 //    size_t _totalFree;
 //    size_t _waittingSize;
-    
-    TerminalPtr terminal_ptr;
 };
 
 #ifdef _ice_verbose
@@ -587,9 +524,6 @@ RingBufferA_context::RingBufferA_context(unsigned ringBufferCapacity, unsigned r
     _eatBufferIndex = 0;
     _buffersUsed = 0;
     _lastlimitCapacity = 0;
-    
-    terminal_ptr = new Terminal();
-    terminal_ptr->start();
 }
 
 RingBufferA_context::~RingBufferA_context()

@@ -2,7 +2,7 @@
 #define _AudioPlayUnit_HEAD
 //#include "ReStartableThread.h"
 #include <memory>
-#include "RingBufferA.h"
+//#include "RingBufferA.h"
 #include <AudioToolbox/AudioToolbox.h>
 #include <AudioUnit/AudioUnit.h>
 

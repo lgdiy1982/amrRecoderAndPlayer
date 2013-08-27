@@ -11,42 +11,39 @@
 
 #include <iostream>
 #include <memory>
+#include <IceUtil/Shared.h>
+#include <IceUtil/Handle.h>
 typedef struct ChunkInfo* ChunkInfoRef;
-typedef struct PutBufferChunk* PutBufferChunkRef;
-typedef struct PopBufferChunk* PopBufferChunkRef;
+typedef struct BufferChunk* BufferChunkRef;
 
-typedef void (*PutCallBackFun)(void* userData, const ChunkInfoRef,  bool getTerminated);
-typedef void (*PopCallBackFun)(void* userData, const ChunkInfoRef,  bool getTerminated);
+typedef size_t (*CallBackFun)(void* userData, const ChunkInfoRef,  bool terminated);
 
 struct ChunkInfo
 {
     unsigned char* _data;
-    unsigned       _size;
+    size_t       _size;
 };
 
-struct PutBufferChunk : public ChunkInfo
+struct BufferChunk : public ChunkInfo
 {
-    PutCallBackFun    _callback;
-    void*          _userData;
-};
-
-struct PopBufferChunk : public ChunkInfo
-{
-    PopCallBackFun   _callback;
+    CallBackFun    _callback;
     void*          _userData;
 };
 
 
 
-class BytesBuffer
+
+class BytesBuffer : public IceUtil::Shared
 {
 public:
     BytesBuffer(size_t bufferSize);
-    size_t put(unsigned char* data, size_t size, size_t timeout = 0);
-    unsigned char* pop(size_t size, size_t timeout = 0);
-    
+    void feed(size_t size, BufferChunkRef cbChunk);
+    void eat(size_t size, BufferChunkRef cbChunk);
+    void terminatedFeed();
+    void terminatedEat();
 private:
     std::auto_ptr<class BytesBuffer_context> _ctx;
 };
 
+typedef IceUtil::Handle<BytesBuffer> BytesBufferPtr;
 #endif /* defined(__AmrRecoderAndPlayer__BytesBuffer__) */

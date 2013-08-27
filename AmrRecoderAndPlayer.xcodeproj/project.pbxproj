@@ -21,6 +21,36 @@
 		4D129FA517C8937000BAE372 /* AmrFileRecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D129FA417C8937000BAE372 /* AmrFileRecoder.mm */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4D129FA817C8939200BAE372 /* AmrFilePlayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D129FA717C8939200BAE372 /* AmrFilePlayer.mm */; };
 		4D9918E817CB6060004179E8 /* BytesBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9918E617CB6060004179E8 /* BytesBuffer.cpp */; };
+		4D9BABC217CC3DB00000F5B3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABC117CC3DB00000F5B3 /* main.cpp */; };
+		4D9BABC417CC3DB00000F5B3 /* TestBytesBuffer.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4D9BABC317CC3DB00000F5B3 /* TestBytesBuffer.1 */; };
+		4D9BABC817CC3DFB0000F5B3 /* ArgVector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71217CAEE3100C4E02E /* ArgVector.cpp */; };
+		4D9BABC917CC3DFB0000F5B3 /* Cond.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71317CAEE3100C4E02E /* Cond.cpp */; };
+		4D9BABCA17CC3DFB0000F5B3 /* ConvertUTF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71417CAEE3100C4E02E /* ConvertUTF.cpp */; };
+		4D9BABCB17CC3DFB0000F5B3 /* CountDownLatch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71517CAEE3100C4E02E /* CountDownLatch.cpp */; };
+		4D9BABCC17CC3DFB0000F5B3 /* CtrlCHandler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71617CAEE3100C4E02E /* CtrlCHandler.cpp */; };
+		4D9BABCD17CC3DFB0000F5B3 /* Exception.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71717CAEE3100C4E02E /* Exception.cpp */; };
+		4D9BABCE17CC3DFB0000F5B3 /* FileUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71817CAEE3100C4E02E /* FileUtil.cpp */; };
+		4D9BABCF17CC3DFB0000F5B3 /* InputUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71917CAEE3100C4E02E /* InputUtil.cpp */; };
+		4D9BABD017CC3DFB0000F5B3 /* MutexProtocol.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71A17CAEE3100C4E02E /* MutexProtocol.cpp */; };
+		4D9BABD117CC3DFB0000F5B3 /* Options.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71B17CAEE3100C4E02E /* Options.cpp */; };
+		4D9BABD217CC3DFB0000F5B3 /* OutputUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71C17CAEE3100C4E02E /* OutputUtil.cpp */; };
+		4D9BABD317CC3DFB0000F5B3 /* Random.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71D17CAEE3100C4E02E /* Random.cpp */; };
+		4D9BABD417CC3DFB0000F5B3 /* RecMutex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71E17CAEE3100C4E02E /* RecMutex.cpp */; };
+		4D9BABD517CC3DFB0000F5B3 /* RWRecMutex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71F17CAEE3100C4E02E /* RWRecMutex.cpp */; };
+		4D9BABD617CC3DFB0000F5B3 /* Shared.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72017CAEE3100C4E02E /* Shared.cpp */; };
+		4D9BABD717CC3DFB0000F5B3 /* StaticMutex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72117CAEE3100C4E02E /* StaticMutex.cpp */; };
+		4D9BABD817CC3DFB0000F5B3 /* StringUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72217CAEE3100C4E02E /* StringUtil.cpp */; };
+		4D9BABD917CC3DFB0000F5B3 /* Thread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72317CAEE3100C4E02E /* Thread.cpp */; };
+		4D9BABDA17CC3DFB0000F5B3 /* ThreadException.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72417CAEE3100C4E02E /* ThreadException.cpp */; };
+		4D9BABDB17CC3DFB0000F5B3 /* Time.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72517CAEE3200C4E02E /* Time.cpp */; };
+		4D9BABDC17CC3DFB0000F5B3 /* Timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72617CAEE3200C4E02E /* Timer.cpp */; };
+		4D9BABDD17CC3DFB0000F5B3 /* Unicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72717CAEE3200C4E02E /* Unicode.cpp */; };
+		4D9BABDE17CC3DFB0000F5B3 /* UUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72817CAEE3200C4E02E /* UUID.cpp */; };
+		4D9BABDF17CC3E100000F5B3 /* BytesBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9918E617CB6060004179E8 /* BytesBuffer.cpp */; };
+		4D9BABE217CC98B80000F5B3 /* SafePrinter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE017CC98B80000F5B3 /* SafePrinter.cpp */; };
+		4D9BABE317CC98B80000F5B3 /* SafePrinter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE017CC98B80000F5B3 /* SafePrinter.cpp */; };
+		4D9BABE617CC9EF00000F5B3 /* HexDump.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */; };
+		4D9BABE717CC9EF00000F5B3 /* HexDump.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */; };
 		4DF0B72E17CAEE3200C4E02E /* amrFileCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B6D617CAEE3100C4E02E /* amrFileCodec.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4DF0B72F17CAEE3200C4E02E /* libopencore-amrnb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B6DF17CAEE3100C4E02E /* libopencore-amrnb.a */; };
 		4DF0B73017CAEE3200C4E02E /* libopencore-amrwb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B6E017CAEE3100C4E02E /* libopencore-amrwb.a */; };
@@ -50,7 +80,6 @@
 		4DF0B74917CAEE3200C4E02E /* Unicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72717CAEE3200C4E02E /* Unicode.cpp */; };
 		4DF0B74A17CAEE3200C4E02E /* UUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72817CAEE3200C4E02E /* UUID.cpp */; };
 		4DF0B74B17CAEE3200C4E02E /* ReStartableThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72A17CAEE3200C4E02E /* ReStartableThread.cpp */; };
-		4DF0B74C17CAEE3200C4E02E /* RingBufferA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72C17CAEE3200C4E02E /* RingBufferA.cpp */; };
 		4DF0B74E17CAEF7000C4E02E /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B74D17CAEF7000C4E02E /* CoreAudio.framework */; };
 		4DF0B75017CAEF7800C4E02E /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B74F17CAEF7800C4E02E /* libz.dylib */; };
 		4DF0B75217CAEFAA00C4E02E /* libbz2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B75117CAEFAA00C4E02E /* libbz2.dylib */; };
@@ -59,6 +88,19 @@
 		4DF0B75917CAF0ED00C4E02E /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B75817CAF0ED00C4E02E /* CoreFoundation.framework */; };
 		4DF0B75B17CAF15900C4E02E /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B75A17CAF15900C4E02E /* OpenGLES.framework */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4D9BABBD17CC3DB00000F5B3 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				4D9BABC417CC3DB00000F5B3 /* TestBytesBuffer.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		4D129F7D17C8929F00BAE372 /* AmrRecoderAndPlayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AmrRecoderAndPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -83,6 +125,13 @@
 		4D129FA717C8939200BAE372 /* AmrFilePlayer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AmrFilePlayer.mm; sourceTree = "<group>"; };
 		4D9918E617CB6060004179E8 /* BytesBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BytesBuffer.cpp; sourceTree = "<group>"; };
 		4D9918E717CB6060004179E8 /* BytesBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BytesBuffer.h; sourceTree = "<group>"; };
+		4D9BABBF17CC3DB00000F5B3 /* TestBytesBuffer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TestBytesBuffer; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D9BABC117CC3DB00000F5B3 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		4D9BABC317CC3DB00000F5B3 /* TestBytesBuffer.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = TestBytesBuffer.1; sourceTree = "<group>"; };
+		4D9BABE017CC98B80000F5B3 /* SafePrinter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SafePrinter.cpp; sourceTree = "<group>"; };
+		4D9BABE117CC98B80000F5B3 /* SafePrinter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SafePrinter.h; sourceTree = "<group>"; };
+		4D9BABE417CC9CEB0000F5B3 /* HexDump.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HexDump.h; sourceTree = "<group>"; };
+		4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HexDump.cpp; sourceTree = "<group>"; };
 		4DF0B6D517CAEE3100C4E02E /* amrFileCodec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = amrFileCodec.h; sourceTree = "<group>"; };
 		4DF0B6D617CAEE3100C4E02E /* amrFileCodec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = amrFileCodec.m; sourceTree = "<group>"; };
 		4DF0B6D917CAEE3100C4E02E /* interf_dec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = interf_dec.h; sourceTree = "<group>"; };
@@ -189,6 +238,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4D9BABBC17CC3DB00000F5B3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -200,6 +256,7 @@
 				4DF0B6E817CAEE3100C4E02E /* ice-lib */,
 				4DF0B72917CAEE3200C4E02E /* ring */,
 				4D129F8617C8929F00BAE372 /* AmrRecoderAndPlayer */,
+				4D9BABC017CC3DB00000F5B3 /* TestBytesBuffer */,
 				4D129F7F17C8929F00BAE372 /* Frameworks */,
 				4D129F7E17C8929F00BAE372 /* Products */,
 			);
@@ -209,6 +266,7 @@
 			isa = PBXGroup;
 			children = (
 				4D129F7D17C8929F00BAE372 /* AmrRecoderAndPlayer.app */,
+				4D9BABBF17CC3DB00000F5B3 /* TestBytesBuffer */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -259,6 +317,15 @@
 				4D129F9617C892A000BAE372 /* Default-568h@2x.png */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		4D9BABC017CC3DB00000F5B3 /* TestBytesBuffer */ = {
+			isa = PBXGroup;
+			children = (
+				4D9BABC117CC3DB00000F5B3 /* main.cpp */,
+				4D9BABC317CC3DB00000F5B3 /* TestBytesBuffer.1 */,
+			);
+			path = TestBytesBuffer;
 			sourceTree = "<group>";
 		};
 		4DF0B6D417CAEE3100C4E02E /* amr */ = {
@@ -432,6 +499,10 @@
 				4DF0B72D17CAEE3200C4E02E /* RingBufferA.h */,
 				4D9918E617CB6060004179E8 /* BytesBuffer.cpp */,
 				4D9918E717CB6060004179E8 /* BytesBuffer.h */,
+				4D9BABE017CC98B80000F5B3 /* SafePrinter.cpp */,
+				4D9BABE117CC98B80000F5B3 /* SafePrinter.h */,
+				4D9BABE417CC9CEB0000F5B3 /* HexDump.h */,
+				4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */,
 			);
 			name = ring;
 			path = AmrRecoderAndPlayer/ring;
@@ -457,6 +528,23 @@
 			productReference = 4D129F7D17C8929F00BAE372 /* AmrRecoderAndPlayer.app */;
 			productType = "com.apple.product-type.application";
 		};
+		4D9BABBE17CC3DB00000F5B3 /* TestBytesBuffer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D9BABC717CC3DB00000F5B3 /* Build configuration list for PBXNativeTarget "TestBytesBuffer" */;
+			buildPhases = (
+				4D9BABBB17CC3DB00000F5B3 /* Sources */,
+				4D9BABBC17CC3DB00000F5B3 /* Frameworks */,
+				4D9BABBD17CC3DB00000F5B3 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TestBytesBuffer;
+			productName = TestBytesBuffer;
+			productReference = 4D9BABBF17CC3DB00000F5B3 /* TestBytesBuffer */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -479,6 +567,7 @@
 			projectRoot = "";
 			targets = (
 				4D129F7C17C8929F00BAE372 /* AmrRecoderAndPlayer */,
+				4D9BABBE17CC3DB00000F5B3 /* TestBytesBuffer */,
 			);
 		};
 /* End PBXProject section */
@@ -536,8 +625,43 @@
 				4DF0B74917CAEE3200C4E02E /* Unicode.cpp in Sources */,
 				4DF0B74A17CAEE3200C4E02E /* UUID.cpp in Sources */,
 				4DF0B74B17CAEE3200C4E02E /* ReStartableThread.cpp in Sources */,
-				4DF0B74C17CAEE3200C4E02E /* RingBufferA.cpp in Sources */,
 				4D9918E817CB6060004179E8 /* BytesBuffer.cpp in Sources */,
+				4D9BABE217CC98B80000F5B3 /* SafePrinter.cpp in Sources */,
+				4D9BABE617CC9EF00000F5B3 /* HexDump.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D9BABBB17CC3DB00000F5B3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D9BABDF17CC3E100000F5B3 /* BytesBuffer.cpp in Sources */,
+				4D9BABC817CC3DFB0000F5B3 /* ArgVector.cpp in Sources */,
+				4D9BABC917CC3DFB0000F5B3 /* Cond.cpp in Sources */,
+				4D9BABCA17CC3DFB0000F5B3 /* ConvertUTF.cpp in Sources */,
+				4D9BABCB17CC3DFB0000F5B3 /* CountDownLatch.cpp in Sources */,
+				4D9BABCC17CC3DFB0000F5B3 /* CtrlCHandler.cpp in Sources */,
+				4D9BABCD17CC3DFB0000F5B3 /* Exception.cpp in Sources */,
+				4D9BABCE17CC3DFB0000F5B3 /* FileUtil.cpp in Sources */,
+				4D9BABCF17CC3DFB0000F5B3 /* InputUtil.cpp in Sources */,
+				4D9BABD017CC3DFB0000F5B3 /* MutexProtocol.cpp in Sources */,
+				4D9BABD117CC3DFB0000F5B3 /* Options.cpp in Sources */,
+				4D9BABD217CC3DFB0000F5B3 /* OutputUtil.cpp in Sources */,
+				4D9BABD317CC3DFB0000F5B3 /* Random.cpp in Sources */,
+				4D9BABD417CC3DFB0000F5B3 /* RecMutex.cpp in Sources */,
+				4D9BABD517CC3DFB0000F5B3 /* RWRecMutex.cpp in Sources */,
+				4D9BABD617CC3DFB0000F5B3 /* Shared.cpp in Sources */,
+				4D9BABD717CC3DFB0000F5B3 /* StaticMutex.cpp in Sources */,
+				4D9BABD817CC3DFB0000F5B3 /* StringUtil.cpp in Sources */,
+				4D9BABD917CC3DFB0000F5B3 /* Thread.cpp in Sources */,
+				4D9BABDA17CC3DFB0000F5B3 /* ThreadException.cpp in Sources */,
+				4D9BABDB17CC3DFB0000F5B3 /* Time.cpp in Sources */,
+				4D9BABDC17CC3DFB0000F5B3 /* Timer.cpp in Sources */,
+				4D9BABDD17CC3DFB0000F5B3 /* Unicode.cpp in Sources */,
+				4D9BABDE17CC3DFB0000F5B3 /* UUID.cpp in Sources */,
+				4D9BABC217CC3DB00000F5B3 /* main.cpp in Sources */,
+				4D9BABE317CC98B80000F5B3 /* SafePrinter.cpp in Sources */,
+				4D9BABE717CC9EF00000F5B3 /* HexDump.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -634,6 +758,7 @@
 					"-IAmrRecoderAndPlayer/Ice-lib/include",
 					"-IAmrRecoderAndPlayer/Ice-lib/src",
 					"-IAmrRecoderAndPlayer/amr/include/opencore-amrnb",
+					"-IAmrRecoderAndPlayer/ring",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -655,9 +780,45 @@
 					"-IAmrRecoderAndPlayer/Ice-lib/include",
 					"-IAmrRecoderAndPlayer/Ice-lib/src",
 					"-IAmrRecoderAndPlayer/amr/include/opencore-amrnb",
+					"-IAmrRecoderAndPlayer/ring",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+		4D9BABC517CC3DB00000F5B3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				OTHER_CFLAGS = (
+					"-IAmrRecoderAndPlayer/Ice-lib/include",
+					"-IAmrRecoderAndPlayer/Ice-lib/src",
+					"-IAmrRecoderAndPlayer/ring",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		4D9BABC617CC3DB00000F5B3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				OTHER_CFLAGS = (
+					"-IAmrRecoderAndPlayer/Ice-lib/include",
+					"-IAmrRecoderAndPlayer/Ice-lib/src",
+					"-IAmrRecoderAndPlayer/ring",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -681,6 +842,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		4D9BABC717CC3DB00000F5B3 /* Build configuration list for PBXNativeTarget "TestBytesBuffer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D9BABC517CC3DB00000F5B3 /* Debug */,
+				4D9BABC617CC3DB00000F5B3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
