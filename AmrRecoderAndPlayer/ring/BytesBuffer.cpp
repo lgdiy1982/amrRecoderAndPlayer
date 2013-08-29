@@ -28,6 +28,7 @@ public:
     void clean();
     void terminateFeed();
     void terminateEat();
+    bool empty();
 private:
     const  size_t _totalBufferSize;
     size_t _feedBeginIndex;
@@ -52,6 +53,7 @@ _feedTerminated(false),
 _eatTerminated(false)
 {
     _buffer = (unsigned char*)malloc(bufferSize);
+    bzero(_buffer, bufferSize);
 }
 
 void BytesBuffer_context::feed(size_t size, BufferChunkRef cbChunk)
@@ -214,6 +216,11 @@ void BytesBuffer_context::terminateEat()
     }
 }
 
+bool BytesBuffer_context::empty()
+{
+    Monitor<RecMutex>::Lock lock(_monitor);
+    return _feedCapacity == _totalBufferSize;
+}
 
 BytesBuffer_context::~BytesBuffer_context()
 {
@@ -250,4 +257,9 @@ void BytesBuffer::terminatedFeed()
 void BytesBuffer::terminatedEat()
 {
     _ctx->terminateEat();
+}
+
+bool BytesBuffer::empty()
+{
+    return  _ctx->empty();
 }

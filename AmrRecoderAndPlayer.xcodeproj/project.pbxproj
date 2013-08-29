@@ -20,6 +20,11 @@
 		4D129F9D17C892A000BAE372 /* ViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4D129F9B17C892A000BAE372 /* ViewController.xib */; };
 		4D129FA517C8937000BAE372 /* AmrFileRecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D129FA417C8937000BAE372 /* AmrFileRecoder.mm */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4D129FA817C8939200BAE372 /* AmrFilePlayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D129FA717C8939200BAE372 /* AmrFilePlayer.mm */; };
+		4D96582E17CDE45E003188ED /* readme.txt in Resources */ = {isa = PBXBuildFile; fileRef = 4D96582D17CDE45E003188ED /* readme.txt */; };
+		4D9658EF17CDEE83003188ED /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B75517CAEFE900C4E02E /* AudioToolbox.framework */; };
+		4D96599F17CDEF3F003188ED /* CADebugMacros.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D96599817CDEF3F003188ED /* CADebugMacros.cpp */; };
+		4D9659A017CDEF3F003188ED /* CAStreamBasicDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D96599B17CDEF3F003188ED /* CAStreamBasicDescription.cpp */; };
+		4D9659A117CDEF3F003188ED /* CAXException.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D96599D17CDEF3F003188ED /* CAXException.cpp */; };
 		4D9918E817CB6060004179E8 /* BytesBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9918E617CB6060004179E8 /* BytesBuffer.cpp */; };
 		4D9BABC217CC3DB00000F5B3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABC117CC3DB00000F5B3 /* main.cpp */; };
 		4D9BABC417CC3DB00000F5B3 /* TestBytesBuffer.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4D9BABC317CC3DB00000F5B3 /* TestBytesBuffer.1 */; };
@@ -83,7 +88,6 @@
 		4DF0B74E17CAEF7000C4E02E /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B74D17CAEF7000C4E02E /* CoreAudio.framework */; };
 		4DF0B75017CAEF7800C4E02E /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B74F17CAEF7800C4E02E /* libz.dylib */; };
 		4DF0B75217CAEFAA00C4E02E /* libbz2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B75117CAEFAA00C4E02E /* libbz2.dylib */; };
-		4DF0B75617CAEFE900C4E02E /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B75517CAEFE900C4E02E /* AudioToolbox.framework */; };
 		4DF0B75717CAF06F00C4E02E /* FileUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71817CAEE3100C4E02E /* FileUtil.cpp */; };
 		4DF0B75917CAF0ED00C4E02E /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B75817CAF0ED00C4E02E /* CoreFoundation.framework */; };
 		4DF0B75B17CAF15900C4E02E /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B75A17CAF15900C4E02E /* OpenGLES.framework */; };
@@ -123,6 +127,16 @@
 		4D129FA417C8937000BAE372 /* AmrFileRecoder.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AmrFileRecoder.mm; sourceTree = "<group>"; };
 		4D129FA617C8939200BAE372 /* AmrFilePlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AmrFilePlayer.h; sourceTree = "<group>"; };
 		4D129FA717C8939200BAE372 /* AmrFilePlayer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AmrFilePlayer.mm; sourceTree = "<group>"; };
+		4D96582D17CDE45E003188ED /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
+		4D96599817CDEF3F003188ED /* CADebugMacros.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CADebugMacros.cpp; sourceTree = "<group>"; };
+		4D96599917CDEF3F003188ED /* CADebugMacros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CADebugMacros.h; sourceTree = "<group>"; };
+		4D96599A17CDEF3F003188ED /* CAMath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CAMath.h; sourceTree = "<group>"; };
+		4D96599B17CDEF3F003188ED /* CAStreamBasicDescription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CAStreamBasicDescription.cpp; sourceTree = "<group>"; };
+		4D96599C17CDEF3F003188ED /* CAStreamBasicDescription.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CAStreamBasicDescription.h; sourceTree = "<group>"; };
+		4D96599D17CDEF3F003188ED /* CAXException.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CAXException.cpp; sourceTree = "<group>"; };
+		4D96599E17CDEF3F003188ED /* CAXException.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CAXException.h; sourceTree = "<group>"; };
+		4D9659A217CDF031003188ED /* CADebugPrintf.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CADebugPrintf.cpp; sourceTree = "<group>"; };
+		4D9659A317CDF031003188ED /* CADebugPrintf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CADebugPrintf.h; sourceTree = "<group>"; };
 		4D9918E617CB6060004179E8 /* BytesBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BytesBuffer.cpp; sourceTree = "<group>"; };
 		4D9918E717CB6060004179E8 /* BytesBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BytesBuffer.h; sourceTree = "<group>"; };
 		4D9BABBF17CC3DB00000F5B3 /* TestBytesBuffer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TestBytesBuffer; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -224,9 +238,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4D9658EF17CDEE83003188ED /* AudioToolbox.framework in Frameworks */,
 				4DF0B75B17CAF15900C4E02E /* OpenGLES.framework in Frameworks */,
 				4DF0B75917CAF0ED00C4E02E /* CoreFoundation.framework in Frameworks */,
-				4DF0B75617CAEFE900C4E02E /* AudioToolbox.framework in Frameworks */,
 				4DF0B75217CAEFAA00C4E02E /* libbz2.dylib in Frameworks */,
 				4DF0B75017CAEF7800C4E02E /* libz.dylib in Frameworks */,
 				4DF0B74E17CAEF7000C4E02E /* CoreAudio.framework in Frameworks */,
@@ -251,6 +265,7 @@
 		4D129F7417C8929F00BAE372 = {
 			isa = PBXGroup;
 			children = (
+				4D96599717CDEF3F003188ED /* PublicUtility */,
 				4DF0B6D417CAEE3100C4E02E /* amr */,
 				4DF0B6E117CAEE3100C4E02E /* audio */,
 				4DF0B6E817CAEE3100C4E02E /* ice-lib */,
@@ -319,6 +334,22 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		4D96599717CDEF3F003188ED /* PublicUtility */ = {
+			isa = PBXGroup;
+			children = (
+				4D9659A217CDF031003188ED /* CADebugPrintf.cpp */,
+				4D9659A317CDF031003188ED /* CADebugPrintf.h */,
+				4D96599817CDEF3F003188ED /* CADebugMacros.cpp */,
+				4D96599917CDEF3F003188ED /* CADebugMacros.h */,
+				4D96599A17CDEF3F003188ED /* CAMath.h */,
+				4D96599B17CDEF3F003188ED /* CAStreamBasicDescription.cpp */,
+				4D96599C17CDEF3F003188ED /* CAStreamBasicDescription.h */,
+				4D96599D17CDEF3F003188ED /* CAXException.cpp */,
+				4D96599E17CDEF3F003188ED /* CAXException.h */,
+			);
+			path = PublicUtility;
+			sourceTree = "<group>";
+		};
 		4D9BABC017CC3DB00000F5B3 /* TestBytesBuffer */ = {
 			isa = PBXGroup;
 			children = (
@@ -385,6 +416,7 @@
 				4DF0B6E517CAEE3100C4E02E /* AudioIOunit.h */,
 				4DF0B6E617CAEE3100C4E02E /* AudioPlayUnit.cpp */,
 				4DF0B6E717CAEE3100C4E02E /* AudioPlayUnit.h */,
+				4D96582D17CDE45E003188ED /* readme.txt */,
 			);
 			name = audio;
 			path = AmrRecoderAndPlayer/audio;
@@ -582,6 +614,7 @@
 				4D129F9517C892A000BAE372 /* Default@2x.png in Resources */,
 				4D129F9717C892A000BAE372 /* Default-568h@2x.png in Resources */,
 				4D129F9D17C892A000BAE372 /* ViewController.xib in Resources */,
+				4D96582E17CDE45E003188ED /* readme.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -628,6 +661,9 @@
 				4D9918E817CB6060004179E8 /* BytesBuffer.cpp in Sources */,
 				4D9BABE217CC98B80000F5B3 /* SafePrinter.cpp in Sources */,
 				4D9BABE617CC9EF00000F5B3 /* HexDump.cpp in Sources */,
+				4D96599F17CDEF3F003188ED /* CADebugMacros.cpp in Sources */,
+				4D9659A017CDEF3F003188ED /* CAStreamBasicDescription.cpp in Sources */,
+				4D9659A117CDEF3F003188ED /* CAXException.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -750,6 +786,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "AmrRecoderAndPlayer/AmrRecoderAndPlayer-Prefix.pch";
 				INFOPLIST_FILE = "AmrRecoderAndPlayer/AmrRecoderAndPlayer-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/AmrRecoderAndPlayer/amr/lib\"",
@@ -759,6 +796,7 @@
 					"-IAmrRecoderAndPlayer/Ice-lib/src",
 					"-IAmrRecoderAndPlayer/amr/include/opencore-amrnb",
 					"-IAmrRecoderAndPlayer/ring",
+					"-IPublicUtility",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -772,6 +810,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "AmrRecoderAndPlayer/AmrRecoderAndPlayer-Prefix.pch";
 				INFOPLIST_FILE = "AmrRecoderAndPlayer/AmrRecoderAndPlayer-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/AmrRecoderAndPlayer/amr/lib\"",
@@ -781,6 +820,7 @@
 					"-IAmrRecoderAndPlayer/Ice-lib/src",
 					"-IAmrRecoderAndPlayer/amr/include/opencore-amrnb",
 					"-IAmrRecoderAndPlayer/ring",
+					"-IPublicUtility",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;

@@ -10,20 +10,19 @@
 class AudioInputUnit 
 {
 public:
+
     static AudioInputUnit& instance();
     void initialize(float sampleRate, int channel, int sampleDeep);
     void uninitialize();
     bool isInitialized();
 
-    OSStatus startRec();
-    OSStatus stopRec();
+    void start(const char* path);
+    void stop();
+    void cancel();
+    
     void flush();
     bool isRunning();
-    //bool getData(PopBufferChunkRef chunkref, size_t waitMicroSeconds = 0);
-    
-    
-    OSStatus startReadFile(const char* iosURL);
-    OSStatus stopReadFile();
+
 private:
     AudioInputUnit();
     ~AudioInputUnit();

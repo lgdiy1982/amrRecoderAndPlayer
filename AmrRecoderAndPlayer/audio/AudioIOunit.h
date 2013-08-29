@@ -11,9 +11,9 @@ class AudioIOunit
 {
 public:
     static AudioIOunit& instance();
-    //void setParam();
     void init(float sampleRate, int channel, int sampleDeep);
-
+    
+    
     void startRec();
     void stopRec();
     void flushRecBuffers();
@@ -34,8 +34,8 @@ public:
     
     
     
-    OSStatus startReadFile(const char* iosURL);
-    OSStatus stopReadFile();
+//    OSStatus startReadFile(const char* iosURL);
+//    OSStatus stopReadFile();
 private:
     AudioIOunit();
     ~AudioIOunit();

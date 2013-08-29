@@ -43,12 +43,33 @@
 
 - (IBAction)startRecord:(id)sender {
 //    [self.recodeButton setTitle:@"停止" forState:UIControlStateNormal];
-    [[AmrFileRecoder sharedInstance] startRecodeWithFilePath:@""];
+    CFUUIDRef uuidObject = CFUUIDCreate(kCFAllocatorDefault);
+    NSString *uuidStr = (__bridge_transfer NSString *)CFUUIDCreateString(kCFAllocatorDefault, uuidObject);
+    CFRelease(uuidObject);
+    
+    
+//    NSArray *paths=NSSearchPathForDirectoriesInDomains(NSDocumentDirectory
+//                                                       , NSUserDomainMask
+//                                                       , YES);
+//    
+//    NSString *fileName=[[paths objectAtIndex:0] stringByAppendingPathComponent:uuidStr];
+
+    NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
+//    [[NSFileManager defaultManager] changeCurrentDirectoryPath:[paths stringByExpandingTildeInPath]];
+//    [[NSFileManager defaultManager] createFileAtPath:uuidStr contents:nil attributes:nil];
+//    NSURL *tmpDirURL = [NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES];
+//    NSURL *fileURL = [[tmpDirURL URLByAppendingPathComponent:@"pkm"] URLByAppendingPathExtension:@"jpg"];
+//    NSLog(@"fileURL: %@", [fileURL path]);
+    
+    NSLog(@"%@", fileName);
+
+    [[AmrFileRecoder sharedInstance] startRecodeWithFilePath:fileName];
 }
 
 - (IBAction)stopRecord:(id)sender {
 //    [self.recodeButton setTitle:@"开始" forState:UIControlStateNormal];
 //    [[AmrFileRecoder sharedInstance] stopRecode];
+    [[AmrFileRecoder sharedInstance] stopRecode];
 }
 
 - (IBAction)cancelRecord:(id)sender {

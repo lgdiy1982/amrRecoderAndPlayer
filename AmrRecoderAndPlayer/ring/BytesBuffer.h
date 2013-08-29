@@ -41,6 +41,7 @@ public:
     void eat(size_t size, BufferChunkRef cbChunk);
     void terminatedFeed();
     void terminatedEat();
+    bool empty();
 private:
     std::auto_ptr<class BytesBuffer_context> _ctx;
 };
