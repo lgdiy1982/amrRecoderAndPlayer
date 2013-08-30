@@ -25,6 +25,7 @@ public:
     SP_context();
     ~SP_context();
     void printf(const char* format, ...);
+    void printf(const char* format, va_list vl);
     void destroy();
     void waitforFinished();
     void run();
@@ -70,6 +71,18 @@ void SP_context::printf(const char* format, ...)
     va_start(vl, format);
     vsnprintf(buf, sizeof(buf), format, vl);
     va_end(vl);
+    Monitor<Mutex>::Lock lock(_monitor);
+    if (_l.empty()) {
+        _monitor.notify();
+    }
+    _l.push_front(string(buf));
+}
+
+void SP_context::printf(const char* format, va_list vl)
+{
+    char buf[2<<8];
+    bzero(buf, sizeof(buf));
+    vsnprintf(buf, sizeof(buf), format, vl);
     Monitor<Mutex>::Lock lock(_monitor);
     if (_l.empty()) {
         _monitor.notify();
@@ -131,6 +144,8 @@ SP::SP()
 
 void SP::printf(const char* format, ...)
 {
+    char buf[2<<8];
+    bzero(buf, sizeof(buf));
     va_list vl;
     va_start(vl, format);
     SP_context::instance()->printf(format, vl);

@@ -31,7 +31,6 @@ static AmrFilePlayer* instance;
 {
     _filepath = filepath;
     [self startPlay];
-
 }
 
 

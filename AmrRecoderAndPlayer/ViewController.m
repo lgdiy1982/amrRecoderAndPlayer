@@ -8,6 +8,7 @@
 
 #import "ViewController.h"
 #import "AmrFileRecoder.h"
+#import "AmrFilePlayer.h"
 @interface ViewController () <UITableViewDataSource, UITableViewDelegate>
 @property (weak, nonatomic) IBOutlet UIButton *playButton;
 - (IBAction)playOrStop:(id)sender;
@@ -38,6 +39,7 @@
 
 - (IBAction)playOrStop:(id)sender {
     NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
+    [[AmrFilePlayer sharedInstance] startPlayWithFilePath:fileName];
 }
 
 

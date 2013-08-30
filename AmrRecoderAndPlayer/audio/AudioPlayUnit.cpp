@@ -52,7 +52,7 @@ bool DecoderFileThread::parseAmrFileFormat()
     ret = fread(buffer, 1, 6, fp);
     if (ret == 0)  return false;
     //verify file format
-    if (0 != strncmp(AMR_MAGIC_NUMBER, buffer, sizeof(AMR_MAGIC_NUMBER)) ) {
+    if (0 != strncmp(AMR_MAGIC_NUMBER, buffer, 6) ) {
         //suppose 3gp file wrapper, find the amr data start postion;
         return false;
     }
@@ -126,6 +126,8 @@ void DecoderFileThread::run()
         _buffer->feed(160*2, &_cbChunk);
     } while (!_destroy);
     Decoder_Interface_exit(_decodeState);
+    
+    fclose(file);
 }
 
 
@@ -147,8 +149,12 @@ public:
     OSStatus start(const char* filepath);
     OSStatus stop();
     bool isRunning();
-   
-    static size_t eatCallback(void* userData, const ChunkInfoRef,  bool terminated);
+    static void rioInterruptionListener(void *inClientData, UInt32 inInterruptionState);
+    static void propListener(	void *                  inClientData,
+                                             AudioSessionPropertyID	inID,
+                                             UInt32                  inDataSize,
+                      const void *            inData);
+    static size_t eatCallback(void* userData, const ChunkInfoRef,  bool terminated);;
     /**
      This callback is called when the audioUnit needs new data to play through the
      speakers. If you don't have any, just don't write anything in the buffers
@@ -173,6 +179,7 @@ private:
 
 
 AudioPlayUnit_context::AudioPlayUnit_context()
+:_audioUnit(0)
 {
     _isInitialized = false;
     setupBuffers();
@@ -205,7 +212,33 @@ void AudioPlayUnit_context::uninitialize()
 }
 
 
+void AudioPlayUnit_context::rioInterruptionListener(void *inClientData, UInt32 inInterruptionState)
+{
+    printf ("Interrupted! inInterruptionState=%ld\n", inInterruptionState);
+    AudioPlayUnit_context *This = (AudioPlayUnit_context*)inClientData;
+    
+    switch (inInterruptionState) {
+        case kAudioSessionBeginInterruption:
+            //shutdown audio unit
+            break;
+        case kAudioSessionEndInterruption:
+            //            CheckError(AudioQueueStart(appDelegate.audioQueue, 0), \
+            "Couldn't restart the audio queue");
+            break;
+        default:
+            break;
+    };
+}
 
+
+
+void AudioPlayUnit_context::propListener(	void *                  inClientData,
+                                          AudioSessionPropertyID	inID,
+                                          UInt32                  inDataSize,
+                                          const void *            inData)
+{
+    
+}
 
 void AudioPlayUnit_context::initialize(float sampleRate, int channel, int sampleDeep) {
     if(_isInitialized)
@@ -213,18 +246,18 @@ void AudioPlayUnit_context::initialize(float sampleRate, int channel, int sample
     
     try {
         // Initialize and configure the audio session
-        XThrowIfError(AudioSessionInitialize(NULL, NULL, NULL/*rioInterruptionListener*/, this), "couldn't initialize audio session");
+//        XThrowIfError(AudioSessionInitialize(NULL, NULL, AudioPlayUnit_context::rioInterruptionListener, this), "couldn't initialize audio session");
         
-        UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
-        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category");
-        XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, NULL/*propListener*/, this), "couldn't set property listener");
-        
-        Float32 preferredBufferSize = .02;
-        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
-        
-        Float64 hwSampleRate;
-        UInt32 size = sizeof(hwSampleRate);
-        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
+//        UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
+//        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category");
+//        XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, this), "couldn't set property listener");
+//        
+//        Float32 preferredBufferSize = .02;
+//        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
+//        
+//        Float64 hwSampleRate;
+//        UInt32 size = sizeof(hwSampleRate);
+//        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
         
         XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
         
@@ -233,6 +266,7 @@ void AudioPlayUnit_context::initialize(float sampleRate, int channel, int sample
         callbackStruct.inputProc = AudioPlayUnit_context::playbackCallback;
         callbackStruct.inputProcRefCon = this;
         _audioFormat = CAStreamBasicDescription(8000.f, 1, CAStreamBasicDescription::kPCMFormatInt16, false);
+        _audioFormat.Print();
         XThrowIfError(SetupRemoteIO(_audioUnit, callbackStruct, _audioFormat), "couldn't setup remote i/o unit");
         
     }
@@ -269,20 +303,16 @@ size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef inf
 {
     RenderChunk& cbchunk = (RenderChunk &)*userData;
     AudioPlayUnit_context* This = (AudioPlayUnit_context*)cbchunk.inRefCon;
-    
-    UInt32 propsize = offsetof(AudioBufferList, mBuffers[0]) + (sizeof(AudioBuffer) *
-                                                                This->_audioFormat.mChannelsPerFrame);
-    AudioBufferList* bufferlist = (AudioBufferList *)malloc(propsize);
-    bufferlist->mNumberBuffers =  This->_audioFormat.mChannelsPerFrame;     //noninterleved
-    for (size_t i = 0; i < bufferlist->mNumberBuffers; ++i) {   //channels
-        bufferlist->mBuffers[0].mNumberChannels = 1;
-        bufferlist->mBuffers[0].mDataByteSize = info->_size/bufferlist->mNumberBuffers;
-        bufferlist->mBuffers[0].mData = info->_data + i*info->_size/bufferlist->mNumberBuffers;
+    if (terminated && info->_data == 0) {
+        This->stop();
+        return 0;
     }
     
-    cbchunk.err = AudioUnitRender(This->_audioUnit, cbchunk.ioActionFlags, cbchunk.inTimeStamp, cbchunk.inBusNumber, cbchunk.inNumberFrames, bufferlist);
-    free(bufferlist);
     
+    for (size_t i = 0; i < cbchunk.ioData->mNumberBuffers; ++i) {   //channels
+        cbchunk.ioData->mBuffers[0].mData = info->_data + i*info->_size/cbchunk.ioData->mNumberBuffers;
+    }
+    cbchunk.err = AudioUnitRender(This->_audioUnit, cbchunk.ioActionFlags, cbchunk.inTimeStamp, cbchunk.inBusNumber, cbchunk.inNumberFrames, cbchunk.ioData);    
     return info->_size;
 }
 
@@ -303,7 +333,7 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
     // much data is in the buffer.
     AudioPlayUnit_context* This = (AudioPlayUnit_context*)inRefCon;
     
-    RenderChunk cbchunk;
+    RenderChunk cbchunk = {0};
     cbchunk.inRefCon = This;
     cbchunk.ioActionFlags = ioActionFlags;
     cbchunk.inTimeStamp = inTimeStamp;
@@ -314,7 +344,7 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
     BufferChunk chunk;
     chunk._callback = AudioPlayUnit_context::eatCallback;
     chunk._userData = &cbchunk;
-    This->_buffer->eat(inBusNumber*This->_audioFormat.mBytesPerFrame, &chunk);
+    This->_buffer->eat(inNumberFrames*This->_audioFormat.mBytesPerFrame, &chunk);
     if (cbchunk.err) {
         printf("render: error %d\n", (int)cbchunk.err);
     }
@@ -374,6 +404,7 @@ OSStatus AudioPlayUnit_context::stop()
     try
     {
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "");
+        _audioUnit= 0;
         XThrowIfError(AudioOutputUnitStop(_audioUnit), "");
         XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session active\n");
     }
@@ -492,6 +523,6 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
 		fprintf(stderr, "An unknown error occurred\n");
 		return 1;
 	}
-
+    return 0;
 }
 

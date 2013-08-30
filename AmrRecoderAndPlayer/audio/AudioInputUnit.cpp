@@ -108,7 +108,7 @@ _filepath(filepath)
 
 void EncodeThread::run()
 {
-    int dtx = 1;
+    int dtx = 0;
     armEncodeState = Encoder_Interface_init(dtx);
     file = fopen(_filepath.c_str(), "wb+");
     fwrite(AMR_MAGIC_NUMBER, sizeof(char), 6, file);
@@ -116,7 +116,7 @@ void EncodeThread::run()
         _buffer->eat(160*2, &_cbChunk);
        
     } while (!_destroy);
-    Encoder_Interface_exit(&armEncodeState);
+    //Encoder_Interface_exit(&armEncodeState);
 
     fclose(file);    
     SP::printf("save file\n");
@@ -422,8 +422,12 @@ void AudioInputUnit_context::start(const char* path)
 void AudioInputUnit_context::stop()
 {
     try {
-        XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninit");
-        XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop unit");
+        //XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
+        
+        XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop audio unit");
+        XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninit audio unit");
+        
+        XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
         XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session noactive\n");
     } catch(CAXException &e) {
         char buf[256];
