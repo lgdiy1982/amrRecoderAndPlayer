@@ -57,7 +57,6 @@ static AmrFileRecoder* instance = nil;
 - (void) startRecode
 {
     
-    
     if (!AudioInputUnit::instance().isInitialized())
         AudioInputUnit::instance().initialize(8000.0, 1, 16);
     if (!AudioInputUnit::instance().isRunning())

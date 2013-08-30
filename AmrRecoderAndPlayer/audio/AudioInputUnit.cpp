@@ -2,7 +2,7 @@
 #import <AudioToolbox/AudioToolbox.h>
 #include <BytesBuffer.h>
 #include <IceUtil/IceUtil.h>
-#include <SafePrinter.h>
+#include <SP.h>
 #include <interf_enc.h>
 #include <stdio.h>
 #include <CAStreamBasicDescription.h>
@@ -11,7 +11,7 @@
 #define kOutputBus 0 /*bus 0 represents a stream to output hardware*/
 #define kInputBus 1  /*bus 1 represents a stream from input hardware*/
      
-extern SafePrinterPtr g_p;
+
 
 void CheckError(OSStatus error, const char *operation)
 {
@@ -48,7 +48,7 @@ typedef struct AUUserData{
     
 } *AUUserDataRef;
 
-int SetupRemoteIO (AudioUnit& inRemoteIOUnit, AURenderCallbackStruct inRenderProc, CAStreamBasicDescription& outFormat);
+static int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct&, const CAStreamBasicDescription& );
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------
 class EncodeThread : public IceUtil::Thread
 {
@@ -63,7 +63,7 @@ public:
     
 private:
     //    PopBufferChunk  chunk;
-    string _filepath;
+    std::string _filepath;
     void * armEncodeState;
     bool  _destroy;
     BytesBufferPtr _buffer;
@@ -76,16 +76,18 @@ typedef IceUtil::Handle<EncodeThread> EncodeThreadPtr;
 
 size_t EncodeThread::callBackFun(void* userData, const ChunkInfoRef info,  bool terminated)
 {
-    g_p->printf("<-----------eat\n");
+#ifdef DEBUG
+    
+#endif
+    
     EncodeThread *This = (EncodeThread*)userData;
     if (info->_data == 0 && terminated) {
         This->_destroy = true;
-        g_p->printf("nomore data, quit record");
+        SP::printf("nomore data, quit record\n");
         return 0;
 
     }
     if (info->_size < 160*2) {
-        g_p->printf("skip the truncated chunk");
         return info->_size;
     }
     int ret = Encoder_Interface_Encode(This->armEncodeState, MR122, (const short*)info->_data, This->armFrame, 0);
@@ -106,7 +108,7 @@ _filepath(filepath)
 
 void EncodeThread::run()
 {
-    int dtx = 0;
+    int dtx = 1;
     armEncodeState = Encoder_Interface_init(dtx);
     file = fopen(_filepath.c_str(), "wb+");
     fwrite(AMR_MAGIC_NUMBER, sizeof(char), 6, file);
@@ -114,12 +116,10 @@ void EncodeThread::run()
         _buffer->eat(160*2, &_cbChunk);
        
     } while (!_destroy);
-//    Encoder_Interface_exit(&armEncodeState);
+    Encoder_Interface_exit(&armEncodeState);
 
-    fclose(file);
-
-    
-    g_p->printf("save file");
+    fclose(file);    
+    SP::printf("save file\n");
     
 }
 
@@ -255,8 +255,6 @@ void AudioInputUnit_context::rioInterruptionListener(void *inClientData, UInt32 
 {
     try {
         printf("Session interrupted! --- %s ---", inInterruption == kAudioSessionBeginInterruption ? "Begin Interruption" : "End Interruption");
-        
-//        aurioTouchAppDelegate *THIS = (aurioTouchAppDelegate*)inClientData;
         AudioInputUnit_context *This = (AudioInputUnit_context*)inClientData;
         if (inInterruption == kAudioSessionEndInterruption) {
             // make sure we are again the active session
@@ -298,6 +296,7 @@ void AudioInputUnit_context::initialize(float sampleRate, int channel, int sampl
         AURenderCallbackStruct callbackStruct;        
         callbackStruct.inputProc = recordingCallback;
         callbackStruct.inputProcRefCon = this;
+        _audioFormat = CAStreamBasicDescription(8000, 1, CAStreamBasicDescription::kPCMFormatInt16, false);
         XThrowIfError(SetupRemoteIO(_audioUnit, callbackStruct, _audioFormat), "couldn't setup remote i/o unit");
     } catch(CAXException &e) {
         char buf[256];
@@ -306,147 +305,6 @@ void AudioInputUnit_context::initialize(float sampleRate, int channel, int sampl
     catch (...) {
 		fprintf(stderr, "An unknown error occurred\n");
 	}
-    
-    
-//	AudioComponentInstance& audioUnit  = _audioUnit;
-//	
-//	// Describe audio component
-//	AudioComponentDescription desc;
-//	desc.componentType = kAudioUnitType_Output;             
-//	desc.componentSubType = kAudioUnitSubType_RemoteIO;  /*yes, asking for a HAL output device to do audio input is still badly counterintuitive.*/
-//	desc.componentFlags = 0;
-//	desc.componentFlagsMask = 0;
-//	desc.componentManufacturer = kAudioUnitManufacturer_Apple;
-//	
-//	// Get component
-//	AudioComponent inputComponent = AudioComponentFindNext(NULL, &desc);
-//    
-//    if (inputComponent == NULL) {
-//        printf ("Can't get output unit");
-//        exit (-1);
-//    }
-//	
-//	// Get audio units
-//	CheckError( AudioComponentInstanceNew(inputComponent, &audioUnit),
-//               "Couldn't open component for inputUnit");
-//	
-//	// Enable IO for recording
-//	UInt32 flag = 1;
-//	CheckError( AudioUnitSetProperty(audioUnit, 
-//								  kAudioOutputUnitProperty_EnableIO, 
-//								  kAudioUnitScope_Input, 
-//								  kInputBus,
-//								  &flag, 
-//								  sizeof(flag)) ,
-//               "Couldn't enable output on input unit");
-//	
-//    
-//    
-//    
-//    flag = 0;
-//	// Disable IO for playback
-//	CheckError(AudioUnitSetProperty(audioUnit, 
-//								  kAudioOutputUnitProperty_EnableIO, 
-//								  kAudioUnitScope_Output, 
-//								  kOutputBus,
-//								  &flag, 
-//								  sizeof(flag)),
-//               "Couldn't disable output on output unit");
-//	
-//    
-////    AudioDeviceID defaultDevice = kAudioObjectUnknown;
-////    UInt32 propertySize = sizeof (defaultDevice);
-////    AudioObjectPropertyAddress defaultDeviceProperty;
-////    defaultDeviceProperty.mSelector = kAudioHardwarePropertyDefaultInputDevice;
-////    defaultDeviceProperty.mScope = kAudioObjectPropertyScopeGlobal;
-////    defaultDeviceProperty.mElement = kAudioObjectPropertyElementMaster;
-////    CheckError (AudioObjectGetPropertyData(kAudioObjectSystemObject,
-////                                           &defaultDeviceProperty,
-////                                           0,
-////                                           NULL,
-////                                           &propertySize,
-////                                           &defaultDevice),
-////                "Couldn't get default input device");
-//    
-//    
-//    UInt32 asbdSize = sizeof(AudioStreamBasicDescription);
-//    CheckError( AudioUnitGetProperty(audioUnit,
-//                         kAudioUnitProperty_StreamFormat,
-//                         kAudioUnitScope_Input,
-//                         kInputBus,
-//                         &_audioFormat,
-//                         &asbdSize),
-//             "Couldn't get defaultASBD from input unit");
-//    
-//    CAStreamBasicDescription::CommonPCMFormat format = CAStreamBasicDescription::kPCMFormatInt16;
-//    if (sampleDeep == 16) {
-//        format = CAStreamBasicDescription::kPCMFormatInt16;
-//    }
-//    if (sampleDeep == 8) {
-//        format = CAStreamBasicDescription::kPCMFormatInt16;
-//    }
-//    _audioFormat = CAStreamBasicDescription(sampleRate, channel, CAStreamBasicDescription::kPCMFormatInt16, false);
-//    
-//    
-//    
-////    _audioFormat.mBitsPerChannel		= sampleDeep;
-////    _audioFormat.mSampleRate			= sampleRate;
-////    _audioFormat.mChannelsPerFrame      = channel;
-//	// Describe format
-//	
-////	_audioFormat.mSampleRate			= sampleRate;
-////	_audioFormat.mFormatID			= kAudioFormatLinearPCM;
-////	_audioFormat.mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsAlignedHigh | kAudioFormatFlagIsPacked;
-////	
-////	_audioFormat.mChannelsPerFrame	= channel;
-////	_audioFormat.mBitsPerChannel		= sampleDeep;    
-////    _audioFormat.mFramesPerPacket	= 1;
-////	_audioFormat.mBytesPerPacket		= _audioFormat.mFramesPerPacket*sampleDeep/8;
-////	_audioFormat.mBytesPerFrame		= channel*_audioFormat.mFramesPerPacket*sampleDeep/8;
-//	
-//	// Apply format
-//	CheckError( AudioUnitSetProperty(audioUnit,
-//								  kAudioUnitProperty_StreamFormat, 
-//								  kAudioUnitScope_Output, 
-//								  kInputBus, 
-//								  &_audioFormat, 
-//								  sizeof(_audioFormat)),
-//               "can't apply format to audioUnit");
-//
-//
-//	CAStreamBasicDescription ca(_audioFormat);
-//	ca.Print();
-//	// Set input callback
-//	AURenderCallbackStruct callbackStruct;
-//	callbackStruct.inputProc = recordingCallback;
-//	callbackStruct.inputProcRefCon = this;
-//	CheckError( AudioUnitSetProperty(audioUnit, 
-//								  kAudioOutputUnitProperty_SetInputCallback, 
-//								  kAudioUnitScope_Global, 
-//								  kInputBus, 
-//								  &callbackStruct, 
-//								  sizeof(callbackStruct)),
-//               "Could not applay callback to audioUnit");	
-//
-//	// Disable buffer allocation for the recorder (optional - do this if we want to pass in our own)
-//	flag = 0;
-//	CheckError(AudioUnitSetProperty(audioUnit,
-//								  kAudioUnitProperty_ShouldAllocateBuffer,
-//								  kAudioUnitScope_Output, 
-//								  kInputBus,
-//								  &flag, 
-//								  sizeof(flag)),
-//             "Could not disable buffer allocation for the recorder");
-//	
-//
-//
-//	// Allocate our own buffers (1 channel, 16 bits per sample, thus 16 bits per frame, thus 2 bytes per frame).
-//	// Practice learns the buffers used contain 512 frames, if this changes it will be fixed in processAudio.
-//
-//	
-//	// Initialise
-//	CheckError(AudioUnitInitialize(audioUnit),
-//               "Could not init");    
     _isInitialized = true;
 }
 
@@ -483,12 +341,6 @@ size_t AudioInputUnit_context::feedCallBackFun(void* userData, const ChunkInfoRe
     AudioInputUnit_context *This = (AudioInputUnit_context*)_auUserData.inRefCon;
     
     AudioBufferList* _inputBuffer;
-
-    
-    g_p->printf("----------------->feed\n");
-    
-    
-
     // Allocate an AudioBufferList plus enough space for
     // array of AudioBuffers
     UInt32 propsize = offsetof(AudioBufferList, mBuffers[0]) + (sizeof(AudioBuffer) *
@@ -572,6 +424,7 @@ void AudioInputUnit_context::stop()
     try {
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninit");
         XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop unit");
+        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session noactive\n");
     } catch(CAXException &e) {
         char buf[256];
 		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
@@ -658,7 +511,7 @@ AudioInputUnit::~AudioInputUnit()
 
 
 
-int SetupRemoteIO (AudioUnit& inRemoteIOUnit, AURenderCallbackStruct inRenderProc, CAStreamBasicDescription& outFormat)
+int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRenderProc, const CAStreamBasicDescription& outFormat)
 {
 	try {
 		// Open the output unit
@@ -680,24 +533,8 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, AURenderCallbackStruct inRenderPro
         
 		//XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_SetRenderCallback , kAudioUnitScope_Input, kInputBus, &inRenderProc, sizeof(inRenderProc)), "couldn't set remote i/o render callback");
         XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioOutputUnitProperty_SetInputCallback , kAudioUnitScope_Input, kInputBus, &inRenderProc, sizeof(inRenderProc)), "couldn't set remote i/o render callback");
-        
-		
-        // set our required format - LPCM non-interleaved 32 bit floating point
-        //outFormat = CAStreamBasicDescription(44100, kAudioFormatLinearPCM, 4, 1, 4, 2, 32, kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked | kAudioFormatFlagIsFloat | kAudioFormatFlagIsNonInterleaved);
-//        outFormat = CAStreamBasicDescription(8000, kAudioFormatLinearPCM, 2, 1, 2, 1, 16, kLinearPCMFormatFlagIsPacked | kLinearPCMFormatFlagIsSignedInteger);
-        //outFormat = CAStreamBasicDescription(8000, 1, CAStreamBasicDescription::kPCMFormatInt16, false);
-        outFormat.mFormatID = kAudioFormatLinearPCM;
-        outFormat.mSampleRate = 8000.0f; // amr 8khz
-        outFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
-        outFormat.mBitsPerChannel = 16;
-        outFormat.mChannelsPerFrame = 1;
-        outFormat.mFramesPerPacket = 1;
-        outFormat.mBytesPerFrame = (outFormat.mBitsPerChannel/8) * outFormat.mChannelsPerFrame;
-        outFormat.mBytesPerPacket =  outFormat.mBytesPerFrame ;
-        outFormat.Print();
-
 		XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, kInputBus, &outFormat, sizeof(outFormat)), "couldn't set the remote I/O unit's input client format");
-	// Disable buffer allocation for the recorder (optional - do this if we want to pass in our own)
+        // Disable buffer allocation for the recorder (optional - do this if we want to pass in our own)
         UInt32 flag = 0;
         XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_ShouldAllocateBuffer, kAudioUnitScope_Output, kInputBus, &flag, sizeof(flag)), "Could not disable buffer allocation for the recorder");
 		XThrowIfError(AudioUnitInitialize(inRemoteIOUnit), "couldn't initialize the remote I/O unit");

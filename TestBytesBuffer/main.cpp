@@ -11,14 +11,14 @@
 #include <list>
 #include <string>
 #include <BytesBuffer.h>
-#include <SafePrinter.h>
+#include <SP.h>
 using namespace IceUtil;
 using namespace std;
 
 
 
 //--------------------------------------------------------------------------------------------
-SafePrinterPtr g_printer;
+SPPtr g_printer;
 
 BytesBufferPtr bufferPtr;
 
@@ -116,7 +116,7 @@ typedef Handle<FeedThread> FeedThreadPtr;
 
 int main(int argc, const char * argv[])
 {
-    g_printer = new SafePrinter();
+    g_printer = new SP();
     g_printer->start();
     bufferPtr = new BytesBuffer((2<<10)-48);
     //read

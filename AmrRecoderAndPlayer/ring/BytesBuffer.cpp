@@ -8,12 +8,12 @@
 
 #include "BytesBuffer.h"
 #include <IceUtil/IceUtil.h>
-#include <SafePrinter.h>
+#include <SP.h>
 #include <HexDump.h>
 using namespace IceUtil;
 
 
-extern SafePrinterPtr g_printer;
+
 
 class BytesBuffer_context
 {

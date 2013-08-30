@@ -15,8 +15,12 @@
 
 @interface AmrFilePlayer : NSObject
 @property (nonatomic) id<playerDelegate> id;
-@property (nonatomic) NSURL* filepath;
-- (void) start : (NSURL*) filepath;
-- (void) start;
+
+
++ (id) sharedInstance;
+
+- (void) startPlayWithFilePath : (NSString*) filepath;
+- (void) startPlay;
 - (void) stop;
+
 @end

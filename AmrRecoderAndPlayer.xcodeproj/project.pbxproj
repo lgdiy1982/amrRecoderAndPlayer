@@ -52,8 +52,8 @@
 		4D9BABDD17CC3DFB0000F5B3 /* Unicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72717CAEE3200C4E02E /* Unicode.cpp */; };
 		4D9BABDE17CC3DFB0000F5B3 /* UUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B72817CAEE3200C4E02E /* UUID.cpp */; };
 		4D9BABDF17CC3E100000F5B3 /* BytesBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9918E617CB6060004179E8 /* BytesBuffer.cpp */; };
-		4D9BABE217CC98B80000F5B3 /* SafePrinter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE017CC98B80000F5B3 /* SafePrinter.cpp */; };
-		4D9BABE317CC98B80000F5B3 /* SafePrinter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE017CC98B80000F5B3 /* SafePrinter.cpp */; };
+		4D9BABE217CC98B80000F5B3 /* SP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE017CC98B80000F5B3 /* SP.cpp */; };
+		4D9BABE317CC98B80000F5B3 /* SP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE017CC98B80000F5B3 /* SP.cpp */; };
 		4D9BABE617CC9EF00000F5B3 /* HexDump.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */; };
 		4D9BABE717CC9EF00000F5B3 /* HexDump.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */; };
 		4DF0B72E17CAEE3200C4E02E /* amrFileCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B6D617CAEE3100C4E02E /* amrFileCodec.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
@@ -142,8 +142,8 @@
 		4D9BABBF17CC3DB00000F5B3 /* TestBytesBuffer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TestBytesBuffer; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D9BABC117CC3DB00000F5B3 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		4D9BABC317CC3DB00000F5B3 /* TestBytesBuffer.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = TestBytesBuffer.1; sourceTree = "<group>"; };
-		4D9BABE017CC98B80000F5B3 /* SafePrinter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SafePrinter.cpp; sourceTree = "<group>"; };
-		4D9BABE117CC98B80000F5B3 /* SafePrinter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SafePrinter.h; sourceTree = "<group>"; };
+		4D9BABE017CC98B80000F5B3 /* SP.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SP.cpp; sourceTree = "<group>"; };
+		4D9BABE117CC98B80000F5B3 /* SP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SP.h; sourceTree = "<group>"; };
 		4D9BABE417CC9CEB0000F5B3 /* HexDump.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HexDump.h; sourceTree = "<group>"; };
 		4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HexDump.cpp; sourceTree = "<group>"; };
 		4DF0B6D517CAEE3100C4E02E /* amrFileCodec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = amrFileCodec.h; sourceTree = "<group>"; };
@@ -531,8 +531,8 @@
 				4DF0B72D17CAEE3200C4E02E /* RingBufferA.h */,
 				4D9918E617CB6060004179E8 /* BytesBuffer.cpp */,
 				4D9918E717CB6060004179E8 /* BytesBuffer.h */,
-				4D9BABE017CC98B80000F5B3 /* SafePrinter.cpp */,
-				4D9BABE117CC98B80000F5B3 /* SafePrinter.h */,
+				4D9BABE017CC98B80000F5B3 /* SP.cpp */,
+				4D9BABE117CC98B80000F5B3 /* SP.h */,
 				4D9BABE417CC9CEB0000F5B3 /* HexDump.h */,
 				4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */,
 			);
@@ -659,7 +659,7 @@
 				4DF0B74A17CAEE3200C4E02E /* UUID.cpp in Sources */,
 				4DF0B74B17CAEE3200C4E02E /* ReStartableThread.cpp in Sources */,
 				4D9918E817CB6060004179E8 /* BytesBuffer.cpp in Sources */,
-				4D9BABE217CC98B80000F5B3 /* SafePrinter.cpp in Sources */,
+				4D9BABE217CC98B80000F5B3 /* SP.cpp in Sources */,
 				4D9BABE617CC9EF00000F5B3 /* HexDump.cpp in Sources */,
 				4D96599F17CDEF3F003188ED /* CADebugMacros.cpp in Sources */,
 				4D9659A017CDEF3F003188ED /* CAStreamBasicDescription.cpp in Sources */,
@@ -696,7 +696,7 @@
 				4D9BABDD17CC3DFB0000F5B3 /* Unicode.cpp in Sources */,
 				4D9BABDE17CC3DFB0000F5B3 /* UUID.cpp in Sources */,
 				4D9BABC217CC3DB00000F5B3 /* main.cpp in Sources */,
-				4D9BABE317CC98B80000F5B3 /* SafePrinter.cpp in Sources */,
+				4D9BABE317CC98B80000F5B3 /* SP.cpp in Sources */,
 				4D9BABE717CC9EF00000F5B3 /* HexDump.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

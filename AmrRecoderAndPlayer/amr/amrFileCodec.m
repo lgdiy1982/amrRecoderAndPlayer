@@ -15,6 +15,8 @@ typedef unsigned short u16;
 typedef unsigned char u8;
 int amrEncodeMode[] = {4750, 5150, 5900, 6700, 7400, 7950, 10200, 12200}; // amr 编码方式
 
+//big endian to little endian 
+
 u16 readUInt16(char* bis) {
     u16 result = 0;
     result += ((u16)(bis[0])) << 8;
@@ -62,12 +64,12 @@ NSData * fuckAndroid3GP(NSData *data) {
     bis+=4;
     type = readUint32(bis);
     boxSize += 4;
-    bis+=4;
+    
     if (type!=0x66747970) {
         NSLog(@"not android 3gp");
         return data;
     }
-    
+    bis+=4;
     brand = readUint32(bis);
     boxSize += 4;
     bis+=4;

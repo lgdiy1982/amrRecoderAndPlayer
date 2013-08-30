@@ -9,9 +9,9 @@
 #import "AppDelegate.h"
 
 #import "ViewController.h"
-#include <SafePrinter.h>
+#include <SP.h>
 
-SafePrinterPtr g_p;
+
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
@@ -20,10 +20,8 @@ SafePrinterPtr g_p;
     // Override point for customization after application launch.
     self.viewController = [[ViewController alloc] initWithNibName:@"ViewController" bundle:nil];
     self.window.rootViewController = self.viewController;
-    [self.window makeKeyAndVisible];
-    
-    g_p = new SafePrinter();
-    g_p->start();
+    [self.window makeKeyAndVisible];    
+
     return YES;
 }
 

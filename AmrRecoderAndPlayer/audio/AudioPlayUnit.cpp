@@ -2,66 +2,136 @@
 
 #import <AudioToolbox/AudioToolbox.h>
 #include <IceUtil/Time.h>
+#include <BytesBuffer.h>
+#include <CAStreamBasicDescription.h>
+#include <CAXException.h>
+#include <IceUtil/IceUtil.h>
+#include <string>
+#include <interf_dec.h>
+#include <SP.h>
+
+
 #define kOutputBus 0
 #define kInputBus 1
 
-#define checkErr( err) \
-if(err) {\
-OSStatus error = static_cast<OSStatus>(err);\
-fprintf(stdout, " Error: %ld ->  %s:  %d\n",  error,\
-__FILE__, \
-__LINE__\
-);\
-fflush(stdout);\
-return err; \
-}         
 
 
-extern void CheckError(OSStatus error, const char *operation);
-extern void checkStatus(int status);
+using namespace IceUtil;
+using namespace std;
 
 
-template <class T>
-void displayHexBin(const T& v, bool hex = true)
+#define AMR_MAGIC_NUMBER "#!AMR\n"
+
+
+
+class DecoderFileThread : public IceUtil::Thread {
+public:
+    DecoderFileThread(const char* path, BytesBufferPtr buffer);
+    static size_t feedCallback(void* userData, const ChunkInfoRef,  bool terminated);
+    virtual void run();
+    void stop();
+    bool parseAmrFileFormat();
+private: 
+    string filepath;
+    BytesBufferPtr _buffer;
+    bool _destroy;
+    FILE *file;
+    BufferChunk    _cbChunk;
+    void* _decodeState;
+
+};
+
+typedef IceUtil::Handle<DecoderFileThread> DecoderFileThreadPtr;
+
+//amr 11.20
+bool DecoderFileThread::parseAmrFileFormat()
 {
-    const unsigned char c2h[] = "0123456789ABCDEF";
-    const unsigned char c2b[] = "01";
+    char buffer[32];
+    size_t ret = 0;
+    FILE* fp = fopen(filepath.c_str(), "rb");
+    ret = fread(buffer, 1, 6, fp);
+    if (ret == 0)  return false;
+    //verify file format
+    if (0 != strncmp(AMR_MAGIC_NUMBER, buffer, sizeof(AMR_MAGIC_NUMBER)) ) {
+        //suppose 3gp file wrapper, find the amr data start postion;
+        return false;
+    }
+    //verify bitrate
+    ret = fread(buffer, 1, 1, fp);
+    if (ret == 0)   return false;
     
-    unsigned char* p = (unsigned char*)&v;
-    char* buf = new char [sizeof(T)*2+1];
-    char* ptmp = buf;
-    if(hex)
-    {
-        p = p + sizeof(T)-1;
-        for (size_t i = 0; i < sizeof(T); i++, --p)
-        {
-            *buf++ = c2h[*p >> 4];
-            *buf++ = c2h[*p & 0x0F];
-        }
-        *buf = '\0';
-        //printf("hex format displayed as %s\n", ptmp);
-        printf("%s", ptmp);
-        
-        delete [] ptmp;
-        
-    }
-    else
-    {
-        p = (unsigned char*)&v;
-        p = p + sizeof(T)-1;
-        ptmp = buf = new char [sizeof(T)*8+1];
-        for (size_t i = 0; i < sizeof(T); i++, --p)
-        {
-            for (int j = 0; j < 8; j++)
-                *buf++ = c2b[(*p >> (7-j)) & 0x1];
-        }
-        *buf = '\0';
-        //printf("bin format displayed as %s\n", ptmp);
-        printf("%s", ptmp);
-        delete [] ptmp;
-    }
+    
+    if (7 != (buffer[0] & 0x78) >> 3  )
+        return false;
+    fclose(fp);
+    return true;
 }
 
+
+
+size_t DecoderFileThread::feedCallback(void* userData, const ChunkInfoRef info,  bool terminated)
+{
+    static unsigned char buffer[32];
+    DecoderFileThread* This = (DecoderFileThread*)userData;
+    
+    if (terminated) {
+        This->_destroy = true;
+        return 0;
+    }
+    
+    
+    while (true){
+        size_t ret;
+        ret = fread(buffer, 1, 1, This->file);
+        if(ret < 1) {
+            This->_destroy = true;
+            This->_buffer->terminatedFeed();
+            return 0;
+        }
+        //err data, skip to next frame
+        if (7 != ((buffer[0] & 0x78) >> 3) ) {
+            continue;
+        }
+        ret = fread(buffer, 1, 32, This->file);
+        if(ret < 32) {
+            This->_destroy = true;
+            This->_buffer->terminatedFeed();
+            return 0;
+        }
+        break;
+    }
+    
+    Decoder_Interface_Decode(This->_decodeState, buffer, (short*)info->_data, 1);
+    
+    return 160*2;
+}
+
+DecoderFileThread::DecoderFileThread(const char* path, BytesBufferPtr buffer)
+: filepath(path)
+, _buffer(buffer)
+, _destroy(false)
+, _decodeState(0)
+, file(0)
+{
+    _cbChunk._userData = this;
+    _cbChunk._callback = DecoderFileThread::feedCallback;
+}
+
+void DecoderFileThread::run()
+{
+    _decodeState = Decoder_Interface_init();
+    file = fopen(filepath.c_str(), "rb");
+    fseek(file, 6, 0);
+    do {
+        _buffer->feed(160*2, &_cbChunk);
+    } while (!_destroy);
+    Decoder_Interface_exit(_decodeState);
+}
+
+
+#pragma -mark AudioPlayUnit_context
+//---------------------------------------------------------------------------------------------------------------------------------------------------------
+static int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRenderProc, const CAStreamBasicDescription& outFormat);
 
 
 class AudioPlayUnit_context
@@ -74,11 +144,11 @@ public:
     void initialize(float sampleRate, int channel, int sampleDeep);
     void uninitialize();
     bool isInitialized();
-    OSStatus start();
+    OSStatus start(const char* filepath);
     OSStatus stop();
     bool isRunning();
    
-    
+    static size_t eatCallback(void* userData, const ChunkInfoRef,  bool terminated);
     /**
      This callback is called when the audioUnit needs new data to play through the
      speakers. If you don't have any, just don't write anything in the buffers
@@ -89,26 +159,16 @@ public:
                                      UInt32 inBusNumber, 
                                      UInt32 inNumberFrames, 
                                      AudioBufferList *ioData);     
-//    static void popBufferCallback(ChunkInfoRef ref, void* userData, PopbufState state, unsigned fillneedsize);
-//    void popBufferCallback(ChunkInfoRef ref, PopbufState state, unsigned fillneedsize);
+
 private:
-    OSStatus enableIO();
-    OSStatus callbackSetup();
-    OSStatus setupFomart();
     OSStatus setupBuffers();
-    inline void makeBufferSilent (AudioBufferList * ioData);
 private:
-//    std::auto_ptr<RingBufferA> _ring;
+    bool _isInitialized;
 	AudioComponentInstance _audioUnit;
-	//AudioBufferList _inputBuffer;   // this will hold the latest data from the microphone    
-    AudioBufferList * _curOutputABL;
-    unsigned          _fillOffset;
-    unsigned char*    _tempBuf;
-//    PopBufferChunk    _popchunk;
-    unsigned          _totalreceivedSampleSize;
-    bool              _isInitialized;
-    
-    AudioComponentInstance _audioUnit1;
+    BytesBufferPtr _buffer;
+    CAStreamBasicDescription _audioFormat;
+    DecoderFileThreadPtr _decoder;
+    std::string _filepath;
 };
 
 
@@ -116,18 +176,18 @@ AudioPlayUnit_context::AudioPlayUnit_context()
 {
     _isInitialized = false;
     setupBuffers();
-    _fillOffset = 0;
-    _tempBuf = NULL;
 }
 
 
 AudioPlayUnit_context::~AudioPlayUnit_context()
 {
     uninitialize();
-    if (_tempBuf) {
-        free(_tempBuf);
-        _tempBuf = NULL;
-    }
+}
+
+OSStatus AudioPlayUnit_context::setupBuffers()
+{
+    _buffer = new BytesBuffer(2<<12);
+    return noErr;
 }
 
 bool AudioPlayUnit_context::isInitialized()
@@ -145,115 +205,93 @@ void AudioPlayUnit_context::uninitialize()
 }
 
 
+
+
 void AudioPlayUnit_context::initialize(float sampleRate, int channel, int sampleDeep) {
     if(_isInitialized)
         return;
-	AudioComponentInstance& audioUnit  = _audioUnit;
-	OSStatus status;
-	
     
-    
-	// Describe audio component
-	AudioComponentDescription desc;
-	desc.componentType = kAudioUnitType_Output;
-	desc.componentSubType = kAudioUnitSubType_RemoteIO;
-	desc.componentFlags = 0;
-	desc.componentFlagsMask = 0;
-	desc.componentManufacturer = kAudioUnitManufacturer_Apple;
-	
-	// Get component
-	AudioComponent inputComponent = AudioComponentFindNext(NULL, &desc);
-	
-	// Get audio units
-	status = AudioComponentInstanceNew(inputComponent, &audioUnit);
-	checkStatus(status);
-	
-	// Disable IO for recording
-	UInt32 flag = 0;
-	status = AudioUnitSetProperty(audioUnit, 
-								  kAudioOutputUnitProperty_EnableIO, 
-								  kAudioUnitScope_Input, 
-								  kInputBus,
-								  &flag, 
-								  sizeof(flag));
-	checkStatus(status);
-	
-    
-    
-    
-    flag = 1;
-	// Enable IO for playback
-	status = AudioUnitSetProperty(audioUnit, 
-								  kAudioOutputUnitProperty_EnableIO, 
-								  kAudioUnitScope_Output, 
-								  kOutputBus,
-								  &flag, 
-								  sizeof(flag));
-	checkStatus(status);
-	
-	// Describe format
-	AudioStreamBasicDescription audioFormat;
-
-	audioFormat.mSampleRate			= sampleRate;
-	audioFormat.mFormatID			= kAudioFormatLinearPCM;
-	audioFormat.mFormatFlags		= kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
-	
-	audioFormat.mChannelsPerFrame	= channel;
-	audioFormat.mBitsPerChannel		= sampleDeep;    
-    audioFormat.mFramesPerPacket	= 1;
-	audioFormat.mBytesPerPacket		= audioFormat.mFramesPerPacket*sampleDeep/8;
-	audioFormat.mBytesPerFrame		= channel*audioFormat.mFramesPerPacket*sampleDeep/8;
-    audioFormat.mReserved = 0;
-
-    
-    
-	// Apply format
-//	status = AudioUnitSetProperty(audioUnit, 
-//								  kAudioUnitProperty_StreamFormat, 
-//								  kAudioUnitScope_Output, 
-//								  kInputBus, 
-//								  &audioFormat, 
-//								  sizeof(audioFormat));
-//	checkStatus(status);
-	status = AudioUnitSetProperty(audioUnit, 
-								  kAudioUnitProperty_StreamFormat, 
-								  kAudioUnitScope_Input, 
-								  kOutputBus, 
-								  &audioFormat, 
-								  sizeof(audioFormat));
-	checkStatus(status);
-	
-	
-	// Set output callback
-	AURenderCallbackStruct callbackStruct;
-	
-	
-	callbackStruct.inputProc = playbackCallback;
-	callbackStruct.inputProcRefCon = this;
-	status = AudioUnitSetProperty(audioUnit, 
-								  kAudioUnitProperty_SetRenderCallback, 
-								  kAudioUnitScope_Global, 
-								  kOutputBus,
-								  &callbackStruct, 
-								  sizeof(callbackStruct));
-	checkStatus(status);
-	
-
-
-	
-	// Initialise
-	status = AudioUnitInitialize(audioUnit);
-	checkStatus(status);
+    try {
+        // Initialize and configure the audio session
+        XThrowIfError(AudioSessionInitialize(NULL, NULL, NULL/*rioInterruptionListener*/, this), "couldn't initialize audio session");
+        
+        UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
+        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category");
+        XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, NULL/*propListener*/, this), "couldn't set property listener");
+        
+        Float32 preferredBufferSize = .02;
+        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
+        
+        Float64 hwSampleRate;
+        UInt32 size = sizeof(hwSampleRate);
+        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
+        
+        XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
+        
+        
+        AURenderCallbackStruct callbackStruct;
+        callbackStruct.inputProc = AudioPlayUnit_context::playbackCallback;
+        callbackStruct.inputProcRefCon = this;
+        _audioFormat = CAStreamBasicDescription(8000.f, 1, CAStreamBasicDescription::kPCMFormatInt16, false);
+        XThrowIfError(SetupRemoteIO(_audioUnit, callbackStruct, _audioFormat), "couldn't setup remote i/o unit");
+        
+    }
+    catch (CAXException &e) {
+        char buf[256];
+        fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        ///return 1;
+    }
+    catch (...) {
+        fprintf(stderr, "An unknown error occurred\n");
+        //return 1;
+    }	
     _isInitialized = true;    
 }
 
 
 
 
+struct RenderChunk
+{
+    void *inRefCon;
+    AudioUnitRenderActionFlags *ioActionFlags;
+    const AudioTimeStamp *inTimeStamp;
+    UInt32 inBusNumber;
+    UInt32 inNumberFrames;
+    AudioBufferList *ioData;
+    OSStatus err;
+} ;
+
+
+
+
+size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef info,  bool terminated)
+{
+    RenderChunk& cbchunk = (RenderChunk &)*userData;
+    AudioPlayUnit_context* This = (AudioPlayUnit_context*)cbchunk.inRefCon;
+    
+    UInt32 propsize = offsetof(AudioBufferList, mBuffers[0]) + (sizeof(AudioBuffer) *
+                                                                This->_audioFormat.mChannelsPerFrame);
+    AudioBufferList* bufferlist = (AudioBufferList *)malloc(propsize);
+    bufferlist->mNumberBuffers =  This->_audioFormat.mChannelsPerFrame;     //noninterleved
+    for (size_t i = 0; i < bufferlist->mNumberBuffers; ++i) {   //channels
+        bufferlist->mBuffers[0].mNumberChannels = 1;
+        bufferlist->mBuffers[0].mDataByteSize = info->_size/bufferlist->mNumberBuffers;
+        bufferlist->mBuffers[0].mData = info->_data + i*info->_size/bufferlist->mNumberBuffers;
+    }
+    
+    cbchunk.err = AudioUnitRender(This->_audioUnit, cbchunk.ioActionFlags, cbchunk.inTimeStamp, cbchunk.inBusNumber, cbchunk.inNumberFrames, bufferlist);
+    free(bufferlist);
+    
+    return info->_size;
+}
+
 /**
  This callback is called when the audioUnit needs new data to play through the
  speakers. If you don't have any, just don't write anything in the buffers
  */
+
+
 OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon, 
 								 AudioUnitRenderActionFlags *ioActionFlags, 
 								 const AudioTimeStamp *inTimeStamp, 
@@ -265,104 +303,23 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
     // much data is in the buffer.
     AudioPlayUnit_context* This = (AudioPlayUnit_context*)inRefCon;
     
-	This->_curOutputABL = ioData;
-    assert(ioData->mNumberBuffers == 1);
+    RenderChunk cbchunk;
+    cbchunk.inRefCon = This;
+    cbchunk.ioActionFlags = ioActionFlags;
+    cbchunk.inTimeStamp = inTimeStamp;
+    cbchunk.inBusNumber = inBusNumber;
+    cbchunk.inNumberFrames = inNumberFrames;
+    cbchunk.ioData = ioData;
     
-
-//    This->_popchunk.m_callback = AudioPlayUnit_context::popBufferCallback;
-//    This->_popchunk.m_userData = This;
-//    This->_popchunk.m_fillDataSize = inNumberFrames*2;
-//    
-//    
-//    This->_ring->pop(&(This->_popchunk ), 0.1*1000000 );      	
-    return noErr;
+    BufferChunk chunk;
+    chunk._callback = AudioPlayUnit_context::eatCallback;
+    chunk._userData = &cbchunk;
+    This->_buffer->eat(inBusNumber*This->_audioFormat.mBytesPerFrame, &chunk);
+    if (cbchunk.err) {
+        printf("render: error %d\n", (int)cbchunk.err);
+    }
+    return cbchunk.err;
 }
-
-
-
-
-
-//
-//void AudioPlayUnit_context::popBufferCallback(ChunkInfoRef ref, void* userData, PopbufState state, unsigned fillneedsize)
-//{
-//    AudioPlayUnit_context* This = (AudioPlayUnit_context*)userData;
-//    This->popBufferCallback(ref, state, fillneedsize);
-//}
-
-//#define TESTPOPDATA
-//void AudioPlayUnit_context::popBufferCallback(ChunkInfoRef ref, PopbufState state, unsigned fillneedsize)
-//{
-//#ifdef TESTPOPDATA    
-//    static unsigned totalcount = 0;
-//    static IceUtil::Time _recievedTimeLastTime;
-//    IceUtil::Time receivedTime = IceUtil::Time().now();
-//    if (_recievedTimeLastTime == IceUtil::Time() && _recievedTimeLastTime != receivedTime) 
-//    {
-//        _recievedTimeLastTime = receivedTime;
-//    }
-//    else
-//    {               
-//        IceUtil::Time costTime = receivedTime - _recievedTimeLastTime;
-//        if (costTime.toSeconds() > 2) {
-//            totalcount = 0;
-//        }
-//        _recievedTimeLastTime = receivedTime;
-//    }
-//    
-//#endif
-//    if (e_whole == state) 
-//    {
-//        assert(ref->m_dataSize == fillneedsize);
-//        memcpy(_curOutputABL->mBuffers[0].mData,  ref->m_data,  fillneedsize);
-//        _curOutputABL->mBuffers[0].mDataByteSize = fillneedsize;
-//        ///////////////////////////////////////////////////////////////////////
-//#ifdef TESTPOPDATA      
-//        
-//        for (unsigned i=0; i <ref->m_dataSize; ++i) 
-//        {            
-//            if (totalcount++%16 == 0) 
-//                printf("\n%0x0h:", totalcount/16);
-//            displayHexBin( ref->m_data[i]);
-//            printf(" ");
-//        }        
-//#endif
-//        ///////////////////////////////////////////////////////////////////////
-//        return ;
-//    }
-//    
-//    if (_tempBuf == NULL) {
-//       _tempBuf = (unsigned char*)malloc(fillneedsize);
-//    }
-//    
-//
-//    
-//    if (e_start == state) {
-//        _fillOffset = 0;
-//    }
-//    
-//    memcpy(_tempBuf+_fillOffset, ref->m_data, ref->m_dataSize);
-//    _fillOffset += ref->m_dataSize;
-//    
-//    if (e_end == state) 
-//    {
-//        assert(_fillOffset == fillneedsize);
-//        memcpy(_curOutputABL->mBuffers[0].mData, _tempBuf, fillneedsize );
-//        _curOutputABL->mBuffers[0].mDataByteSize = fillneedsize;
-////        ///////////////////////////////////////////////////////////////////////
-//#ifdef TESTPOPDATA       
-//        static unsigned totalcount = 0;
-//        for (unsigned i=0; i < fillneedsize; ++i) 
-//        {            
-//            if (totalcount++%16 == 0) 
-//                printf("\n%0x0h:", totalcount/16);
-//            displayHexBin( _tempBuf[i]);
-//            printf(" ");
-//        }        
-//#endif
-////        ///////////////////////////////////////////////////////////////////////        
-//    }
-//    
-//}
 
 
 
@@ -381,21 +338,32 @@ bool AudioPlayUnit_context::isRunning()
                                    &auhalRunning,
                                    &size);
 	}
-	
-    checkErr(err);
     return auhalRunning;
 }
 
 
 
 
-OSStatus AudioPlayUnit_context::start()
-{   
-    OSStatus status = noErr;
-	status = AudioOutputUnitStart(_audioUnit);
-	checkErr(status);
-
-    return  status;
+OSStatus AudioPlayUnit_context::start(const char* filepath)
+{
+    _decoder = new DecoderFileThread(filepath, _buffer);
+    assert(_decoder->parseAmrFileFormat());
+    _decoder->start();
+    
+    try
+    {
+        XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
+    }
+    catch (CAXException &e) {
+		char buf[256];
+		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+		return 1;
+	}
+	catch (...) {
+		fprintf(stderr, "An unknown error occurred\n");
+		return 1;
+	}
+    return  0;
 }
 
 /**
@@ -403,20 +371,28 @@ OSStatus AudioPlayUnit_context::start()
  */
 OSStatus AudioPlayUnit_context::stop()
 {
-    
-	OSStatus status = noErr;
-    status = AudioOutputUnitStop(_audioUnit);
-	CheckError(status, "AudioOutputUnitStop");
-    
-    return  status;
+    try
+    {
+        XThrowIfError(AudioUnitUninitialize(_audioUnit), "");
+        XThrowIfError(AudioOutputUnitStop(_audioUnit), "");
+        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session active\n");
+    }
+    catch (CAXException &e) {
+		char buf[256];
+		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        
+		return 1;
+	}
+	catch (...) {
+		fprintf(stderr, "An unknown error occurred\n");
+		return 1;
+	}
+
+    return  0;
 }
 
 
-OSStatus AudioPlayUnit_context::setupBuffers()
-{
-//    _ring = std::auto_ptr<RingBufferA>(new RingBufferA(2 << 11, 2 << 2) );
-    return noErr;
-}
+
 
 //////////////////////////////////////////////////////////////////
 AudioPlayUnit& AudioPlayUnit::instance()
@@ -447,9 +423,9 @@ bool AudioPlayUnit::isInitialized()
 }
 
 
-OSStatus AudioPlayUnit::startPlay()
+OSStatus AudioPlayUnit::startPlay(const char* filepath)
 {
-    return _ctx->start();
+    return _ctx->start(filepath);
 }
 
 
@@ -463,21 +439,7 @@ bool AudioPlayUnit::isRunning()
     return _ctx->isRunning();
 }
 
-void AudioPlayUnit::flush()
-{
-//    _ctx->_ring->flush();
-}
 
-
-unsigned char* AudioPlayUnit::getBuffer(unsigned & limitSize, unsigned waitTimeMicroSeconds)
-{
-//    return _ctx->_ring->get(limitSize, waitTimeMicroSeconds);
-}
-
-void AudioPlayUnit::fillBuffer(unsigned bufferSize)
-{
-//    _ctx->_ring->put(bufferSize);
-}
 
 AudioPlayUnit::~AudioPlayUnit()
 {
@@ -485,5 +447,51 @@ AudioPlayUnit::~AudioPlayUnit()
 }
 
 
+int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRenderProc, const CAStreamBasicDescription& outFormat)
+{
+    try {
+        AudioComponentInstance& audioUnit  = inRemoteIOUnit;
+        // Describe audio component
+        AudioComponentDescription desc;
+        desc.componentType = kAudioUnitType_Output;
+        desc.componentSubType = kAudioUnitSubType_RemoteIO;
+        desc.componentFlags = 0;
+        desc.componentFlagsMask = 0;
+        desc.componentManufacturer = kAudioUnitManufacturer_Apple;
+        
+        // Get component
+        AudioComponent inputComponent = AudioComponentFindNext(NULL, &desc);
+        // Get audio units
+        XThrowIfError(AudioComponentInstanceNew(inputComponent, &audioUnit), "");
+        
+        
+        // Disable IO for recording
+        UInt32 flag = 0;
+        XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input, kInputBus, &flag, sizeof(flag)), "could not disable record");
+        flag = 1;
+        // Enable IO for playback
+        XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &flag, sizeof(flag)), "could not enable play");
+        
+        //play format
+        XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &outFormat, sizeof(outFormat)), "couldn't set play format");
+        // Set output callback
+        XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Global, kOutputBus, &inRenderProc, sizeof(AURenderCallbackStruct)) , "Could not setRender callback");
+        flag = 0;
+        XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_ShouldAllocateBuffer, kAudioUnitScope_Input, kOutputBus, &flag, sizeof(flag)), "Could not disable buffer allocation for the player");
+        // Initialise
+        XThrowIfError(AudioUnitInitialize(audioUnit), "could not init audio unit");
 
+    }
+    catch (CAXException &e) {
+		char buf[256];
+		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        
+		return 1;
+	}
+	catch (...) {
+		fprintf(stderr, "An unknown error occurred\n");
+		return 1;
+	}
+
+}
 

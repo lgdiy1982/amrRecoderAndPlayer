@@ -14,7 +14,7 @@ public:
     void initialize(float sampleRate, int channel, int sampleDeep);
     void uninitialize();
     bool isInitialized();
-    OSStatus startPlay();
+    OSStatus startPlay(const char* filepath);
     OSStatus stopPlay();
     void flush();
     bool isRunning();

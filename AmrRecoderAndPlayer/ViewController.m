@@ -37,7 +37,7 @@
 }
 
 - (IBAction)playOrStop:(id)sender {
-    
+    NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
 }
 
 
