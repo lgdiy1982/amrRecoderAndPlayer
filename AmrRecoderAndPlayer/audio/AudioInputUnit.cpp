@@ -338,33 +338,32 @@ size_t AudioInputUnit_context::feedCallBackFun(void* userData, const ChunkInfoRe
 {
     
     AUUserData& _auUserData = (AUUserData&)*userData;
-    AudioInputUnit_context *This = (AudioInputUnit_context*)_auUserData.inRefCon;
-    
-    AudioBufferList* _inputBuffer;
+    AudioInputUnit_context *This = (AudioInputUnit_context*)_auUserData.inRefCon;   
+
     // Allocate an AudioBufferList plus enough space for
     // array of AudioBuffers
     UInt32 propsize = offsetof(AudioBufferList, mBuffers[0]) + (sizeof(AudioBuffer) *
                                                                 This->_audioFormat.mChannelsPerFrame);
-    _inputBuffer = (AudioBufferList *)malloc(propsize);
-    _inputBuffer->mNumberBuffers =  This->_audioFormat.mChannelsPerFrame;     //noninterleved
+    _auUserData.ioData = (AudioBufferList *)malloc(propsize);
+    _auUserData.ioData->mNumberBuffers =  This->_audioFormat.mChannelsPerFrame;     //noninterleved
 
-    for (size_t i = 0; i < _inputBuffer->mNumberBuffers; ++i) {   //channels
-        _inputBuffer->mBuffers[0].mNumberChannels = 1;
-        _inputBuffer->mBuffers[0].mDataByteSize = info->_size/_inputBuffer->mNumberBuffers;
-        _inputBuffer->mBuffers[0].mData = info->_data + i*info->_size/_inputBuffer->mNumberBuffers;
+    for (size_t i = 0; i < _auUserData.ioData->mNumberBuffers; ++i) {   //channels
+        _auUserData.ioData->mBuffers[0].mNumberChannels = 1;
+        _auUserData.ioData->mBuffers[0].mDataByteSize = info->_size/_auUserData.ioData->mNumberBuffers;
+        _auUserData.ioData->mBuffers[0].mData = info->_data + i*info->_size/_auUserData.ioData->mNumberBuffers;
     }
 
     //Get the new audio data
 
-	OSStatus err = AudioUnitRender(This->_audioUnit,
+	_auUserData.err = AudioUnitRender(This->_audioUnit,
                           _auUserData.ioActionFlags,
                           _auUserData.inTimeStamp,
                           _auUserData.inBusNumber,
                           _auUserData.inNumberFrames, /* of frames requested*/
-                          _inputBuffer );/* Audio Buffer List to hold data*/
+                          _auUserData.ioData );/* Audio Buffer List to hold data*/
 
-	if (err) { printf("render: error %d\n", (int)err); _auUserData.err = err; }
-    free(_inputBuffer);
+	
+    free(_auUserData.ioData);
     return info->_size;
 }
 
@@ -389,7 +388,7 @@ OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
     This->chunk._callback = AudioInputUnit_context::feedCallBackFun;
     This->chunk._userData =&_auUserData;
     This->_buffer->feed(inNumberFrames * This->_audioFormat.mBytesPerPacket, &This->chunk);
-
+    if (_auUserData.err) { SP::printf("render: error %d\n", (int)_auUserData.err);}
 	return _auUserData.err;
 }
 
@@ -397,7 +396,7 @@ OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
 
 void AudioInputUnit_context::setupBuffers()
 {
-    _buffer = new BytesBuffer(2<<15);
+    _buffer = new BytesBuffer(2<<10);
 }
 
 
@@ -427,22 +426,16 @@ void AudioInputUnit_context::stop()
         XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop audio unit");
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninit audio unit");
         
-        XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
-        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session noactive\n");
+//        XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
+//        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session noactive\n");
     } catch(CAXException &e) {
         char buf[256];
-		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        SP::printf("Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
     }
     catch (...) {
-		fprintf(stderr, "An unknown error occurred\n");
+		SP::printf("An unknown error occurred\n");
 	}
 
-    
-//    CheckError( AudioOutputUnitStop(_audioUnit),
-//               "Couldn't stop audio unit");
-//    
-//    CheckError(AudioSessionSetActive(false),
-//               "Couldn't re-set audio session active");
     _buffer->terminatedFeed();
     _encoder->getThreadControl().join();
 
@@ -545,12 +538,12 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
 	}
 	catch (CAXException &e) {
 		char buf[256];
-		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        SP::printf( "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
         
 		return 1;
 	}
 	catch (...) {
-		fprintf(stderr, "An unknown error occurred\n");
+		SP::printf( "An unknown error occurred\n");
 		return 1;
 	}
 	

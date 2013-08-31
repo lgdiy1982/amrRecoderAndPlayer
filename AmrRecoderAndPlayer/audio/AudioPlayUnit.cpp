@@ -301,18 +301,22 @@ struct RenderChunk
 
 size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef info,  bool terminated)
 {
-    RenderChunk& cbchunk = (RenderChunk &)*userData;
-    AudioPlayUnit_context* This = (AudioPlayUnit_context*)cbchunk.inRefCon;
+    RenderChunk& _auUserData = (RenderChunk &)*userData;
+    AudioPlayUnit_context* This = (AudioPlayUnit_context*)_auUserData.inRefCon;
     if (terminated && info->_data == 0) {
         This->stop();
         return 0;
     }
+
+    _auUserData.ioData->mNumberBuffers = This->_audioFormat.mChannelsPerFrame;     //noninterleved
     
-    
-    for (size_t i = 0; i < cbchunk.ioData->mNumberBuffers; ++i) {   //channels
-        cbchunk.ioData->mBuffers[0].mData = info->_data + i*info->_size/cbchunk.ioData->mNumberBuffers;
+    for (size_t i = 0; i < _auUserData.ioData->mNumberBuffers; ++i) {   //channels
+        if (_auUserData.ioData->mBuffers[i].mData) {    //alloc
+            memcpy(_auUserData.ioData->mBuffers[i].mData, info->_data + i*_auUserData.ioData->mBuffers[i].mDataByteSize, _auUserData.ioData->mBuffers[i].mDataByteSize);
+        } else {
+            _auUserData.ioData->mBuffers[i].mData = info->_data + i*_auUserData.ioData->mBuffers[i].mDataByteSize;
+        }
     }
-    cbchunk.err = AudioUnitRender(This->_audioUnit, cbchunk.ioActionFlags, cbchunk.inTimeStamp, cbchunk.inBusNumber, cbchunk.inNumberFrames, cbchunk.ioData);    
     return info->_size;
 }
 
@@ -346,7 +350,7 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
     chunk._userData = &cbchunk;
     This->_buffer->eat(inNumberFrames*This->_audioFormat.mBytesPerFrame, &chunk);
     if (cbchunk.err) {
-        printf("render: error %d\n", (int)cbchunk.err);
+        SP::printf("render: error %d\n", (int)cbchunk.err);
     }
     return cbchunk.err;
 }
@@ -507,8 +511,8 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
         XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &outFormat, sizeof(outFormat)), "couldn't set play format");
         // Set output callback
         XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Global, kOutputBus, &inRenderProc, sizeof(AURenderCallbackStruct)) , "Could not setRender callback");
-        flag = 0;
-        XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_ShouldAllocateBuffer, kAudioUnitScope_Input, kOutputBus, &flag, sizeof(flag)), "Could not disable buffer allocation for the player");
+//        flag = 0;
+//        XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_ShouldAllocateBuffer, kAudioUnitScope_Input, kOutputBus, &flag, sizeof(flag)), "Could not disable buffer allocation for the player");
         // Initialise
         XThrowIfError(AudioUnitInitialize(audioUnit), "could not init audio unit");
 
