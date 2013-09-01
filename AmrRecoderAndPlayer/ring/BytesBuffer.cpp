@@ -141,7 +141,7 @@ void BytesBuffer_context::eat(size_t size, BufferChunkRef cbChunk)
     if (truncated) {
         cbChunk->_data = (unsigned char*)malloc(size);
         cbChunk->_size = size;
-        SP::printf("eat size %u\n", size);
+        //SP::printf("eat size %u\n", size);
         memcpy(cbChunk->_data, _buffer+_eatBeginIndex, truncatedSize);
         memcpy(cbChunk->_data + truncatedSize, _buffer, size-truncatedSize);
         size = cbChunk->_callback(cbChunk->_userData, cbChunk, _feedTerminated);
@@ -152,7 +152,7 @@ void BytesBuffer_context::eat(size_t size, BufferChunkRef cbChunk)
     {
         cbChunk->_data = _buffer+_eatBeginIndex;
         cbChunk->_size = size;
-        SP::printf("eat size %u\n", size);
+        //SP::printf("eat size %u\n", size);
         size = cbChunk->_callback(cbChunk->_userData, cbChunk, _feedTerminated);
     }
 

@@ -17,6 +17,8 @@
 - (IBAction)startRecord:(id)sender;
 - (IBAction)stopRecord:(id)sender;
 - (IBAction)cancelRecord:(id)sender;
+- (IBAction)stopPlayback:(id)sender;
+
 
 
 @property (weak, nonatomic) IBOutlet UITableView *filesTabelView;
@@ -38,8 +40,16 @@
 }
 
 - (IBAction)playOrStop:(id)sender {
-    NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-    [[AmrFilePlayer sharedInstance] startPlayWithFilePath:fileName];
+    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
+//    NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
+    NSLog(@"%@", path);
+    [[AmrFilePlayer sharedInstance] startPlayWithFilePath:path];
+}
+
+
+
+- (IBAction)stopPlayback:(id)sender {
+    [[AmrFilePlayer sharedInstance]  stop];
 }
 
 
@@ -71,7 +81,7 @@
 - (IBAction)stopRecord:(id)sender {
 //    [self.recodeButton setTitle:@"开始" forState:UIControlStateNormal];
 //    [[AmrFileRecoder sharedInstance] stopRecode];
-    [[AmrFileRecoder sharedInstance] stopRecode];
+   [[AmrFilePlayer sharedInstance] stop];
 }
 
 - (IBAction)cancelRecord:(id)sender {
@@ -83,4 +93,8 @@
 #pragma -mark tableview datasource
 
 
+- (void)viewDidUnload {
+    
+    [super viewDidUnload];
+}
 @end

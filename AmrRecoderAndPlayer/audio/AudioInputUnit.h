@@ -30,4 +30,5 @@ private:
     std::auto_ptr<class AudioInputUnit_context> _ctx;
 };
 
+
 #endif 

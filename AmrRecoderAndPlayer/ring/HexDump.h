@@ -9,7 +9,7 @@
 #ifndef AmrRecoderAndPlayer_HexDump_h
 #define AmrRecoderAndPlayer_HexDump_h
 #include <stdio.h>
-
+#include <SP.h>
 template <class T>
 void displayHexBin(const T& v, bool hex = true)
 {

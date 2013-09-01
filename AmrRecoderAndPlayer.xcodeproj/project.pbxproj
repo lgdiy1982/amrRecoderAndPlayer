@@ -56,6 +56,7 @@
 		4D9BABE317CC98B80000F5B3 /* SP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE017CC98B80000F5B3 /* SP.cpp */; };
 		4D9BABE617CC9EF00000F5B3 /* HexDump.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */; };
 		4D9BABE717CC9EF00000F5B3 /* HexDump.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */; };
+		4DA8B13517D2EC1F0077F40C /* raw_amr.amr in Resources */ = {isa = PBXBuildFile; fileRef = 4DA8B13417D2EC1F0077F40C /* raw_amr.amr */; };
 		4DF0B72E17CAEE3200C4E02E /* amrFileCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B6D617CAEE3100C4E02E /* amrFileCodec.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4DF0B72F17CAEE3200C4E02E /* libopencore-amrnb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B6DF17CAEE3100C4E02E /* libopencore-amrnb.a */; };
 		4DF0B73017CAEE3200C4E02E /* libopencore-amrwb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B6E017CAEE3100C4E02E /* libopencore-amrwb.a */; };
@@ -146,6 +147,7 @@
 		4D9BABE117CC98B80000F5B3 /* SP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SP.h; sourceTree = "<group>"; };
 		4D9BABE417CC9CEB0000F5B3 /* HexDump.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HexDump.h; sourceTree = "<group>"; };
 		4D9BABE517CC9EF00000F5B3 /* HexDump.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HexDump.cpp; sourceTree = "<group>"; };
+		4DA8B13417D2EC1F0077F40C /* raw_amr.amr */ = {isa = PBXFileReference; lastKnownFileType = file; path = raw_amr.amr; sourceTree = "<group>"; };
 		4DF0B6D517CAEE3100C4E02E /* amrFileCodec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = amrFileCodec.h; sourceTree = "<group>"; };
 		4DF0B6D617CAEE3100C4E02E /* amrFileCodec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = amrFileCodec.m; sourceTree = "<group>"; };
 		4DF0B6D917CAEE3100C4E02E /* interf_dec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = interf_dec.h; sourceTree = "<group>"; };
@@ -265,6 +267,7 @@
 		4D129F7417C8929F00BAE372 = {
 			isa = PBXGroup;
 			children = (
+				4DA8B13417D2EC1F0077F40C /* raw_amr.amr */,
 				4D96599717CDEF3F003188ED /* PublicUtility */,
 				4DF0B6D417CAEE3100C4E02E /* amr */,
 				4DF0B6E117CAEE3100C4E02E /* audio */,
@@ -615,6 +618,7 @@
 				4D129F9717C892A000BAE372 /* Default-568h@2x.png in Resources */,
 				4D129F9D17C892A000BAE372 /* ViewController.xib in Resources */,
 				4D96582E17CDE45E003188ED /* readme.txt in Resources */,
+				4DA8B13517D2EC1F0077F40C /* raw_amr.amr in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

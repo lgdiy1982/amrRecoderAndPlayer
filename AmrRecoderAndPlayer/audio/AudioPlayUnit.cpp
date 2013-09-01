@@ -9,6 +9,7 @@
 #include <string>
 #include <interf_dec.h>
 #include <SP.h>
+#include <HexDump.h>
 
 
 #define kOutputBus 0
@@ -92,17 +93,24 @@ size_t DecoderFileThread::feedCallback(void* userData, const ChunkInfoRef info, 
         if (7 != ((buffer[0] & 0x78) >> 3) ) {
             continue;
         }
-        ret = fread(buffer, 1, 32, This->file);
-        if(ret < 32) {
+        //read the data
+        ret = fread(buffer+1, 1, 31, This->file);
+        if(ret < 31) {
             This->_destroy = true;
             This->_buffer->terminatedFeed();
             return 0;
         }
         break;
     }
-    
+    bytes2HexS(buffer, 32);
     Decoder_Interface_Decode(This->_decodeState, buffer, (short*)info->_data, 1);
     
+//    for (size_t c = 0; c < 160; ++c) {
+//        short& sample = ((short*)info->_data)[c];
+//        sample = (sample >> 8 & 0x00ff) & (sample << 8 & 0xff00);
+//    }
+//    bytes2HexS(info->_data, 320);
+    //SP::printf("\n");
     return 160*2;
 }
 
@@ -245,38 +253,40 @@ void AudioPlayUnit_context::initialize(float sampleRate, int channel, int sample
         return;
     
     try {
+#if 1
         // Initialize and configure the audio session
-//        XThrowIfError(AudioSessionInitialize(NULL, NULL, AudioPlayUnit_context::rioInterruptionListener, this), "couldn't initialize audio session");
+        XThrowIfError(AudioSessionInitialize(NULL, NULL, AudioPlayUnit_context::rioInterruptionListener, this), "couldn't initialize audio session for playback");
         
-//        UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
-//        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category");
-//        XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, this), "couldn't set property listener");
+        UInt32 audioCategory = kAudioSessionCategory_MediaPlayback;
+        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category");
+        XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, this), "couldn't set property listener");
 //        
-//        Float32 preferredBufferSize = .02;
-//        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
-//        
-//        Float64 hwSampleRate;
-//        UInt32 size = sizeof(hwSampleRate);
-//        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
+        Float32 preferredBufferSize = .02;
+        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
+//
+        Float64 hwSampleRate;
+        UInt32 size = sizeof(hwSampleRate);
+        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
         
         XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
-        
+#endif
         
         AURenderCallbackStruct callbackStruct;
         callbackStruct.inputProc = AudioPlayUnit_context::playbackCallback;
         callbackStruct.inputProcRefCon = this;
         _audioFormat = CAStreamBasicDescription(8000.f, 1, CAStreamBasicDescription::kPCMFormatInt16, false);
+        //_audioFormat.mFormatFlags = kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger;
         _audioFormat.Print();
         XThrowIfError(SetupRemoteIO(_audioUnit, callbackStruct, _audioFormat), "couldn't setup remote i/o unit");
         
     }
     catch (CAXException &e) {
         char buf[256];
-        fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        SP::printf( "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
         ///return 1;
     }
     catch (...) {
-        fprintf(stderr, "An unknown error occurred\n");
+        SP::printf( "An unknown error occurred\n");
         //return 1;
     }	
     _isInitialized = true;    
@@ -380,6 +390,7 @@ bool AudioPlayUnit_context::isRunning()
 
 OSStatus AudioPlayUnit_context::start(const char* filepath)
 {
+    initialize(0, 0, 0);
     _decoder = new DecoderFileThread(filepath, _buffer);
     assert(_decoder->parseAmrFileFormat());
     _decoder->start();
@@ -407,10 +418,11 @@ OSStatus AudioPlayUnit_context::stop()
 {
     try
     {
+        XThrowIfError(AudioOutputUnitStop(_audioUnit), "");
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "");
         _audioUnit= 0;
-        XThrowIfError(AudioOutputUnitStop(_audioUnit), "");
-        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session active\n");
+
+        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session deactive\n");
     }
     catch (CAXException &e) {
 		char buf[256];

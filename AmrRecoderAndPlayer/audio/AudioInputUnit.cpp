@@ -277,10 +277,10 @@ void AudioInputUnit_context::initialize(float sampleRate, int channel, int sampl
     try { 
         
         // Initialize and configure the audio session
-        XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, this), "couldn't initialize audio session");
+        XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, this), "couldn't initialize audio session for record");
         
-        UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
-        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category");
+        UInt32 audioCategory = kAudioSessionCategory_RecordAudio;
+        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category for record");
         XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, this), "couldn't set property listener");
         
         Float32 preferredBufferSize = .02;
@@ -421,13 +421,13 @@ void AudioInputUnit_context::start(const char* path)
 void AudioInputUnit_context::stop()
 {
     try {
-        //XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
+        XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
         
         XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop audio unit");
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninit audio unit");
         
 //        XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
-//        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session noactive\n");
+        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session deactive\n");
     } catch(CAXException &e) {
         char buf[256];
         SP::printf("Error: %s (%s)\n", e.mOperation, e.FormatError(buf));

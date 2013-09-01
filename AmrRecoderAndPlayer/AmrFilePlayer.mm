@@ -36,8 +36,8 @@ static AmrFilePlayer* instance;
 
 - (void) startPlay
 {
-    if (!AudioPlayUnit::instance().isInitialized())
-        AudioPlayUnit::instance().initialize(8000.0, 1, 16);
+//    if (!AudioPlayUnit::instance().isInitialized())
+//        AudioPlayUnit::instance().initialize(8000.0, 1, 16);
     if (!AudioPlayUnit::instance().isRunning())
         AudioPlayUnit::instance().startPlay([_filepath UTF8String] );
 }
