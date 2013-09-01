@@ -104,13 +104,7 @@ size_t DecoderFileThread::feedCallback(void* userData, const ChunkInfoRef info, 
     }
     bytes2HexS(buffer, 32);
     Decoder_Interface_Decode(This->_decodeState, buffer, (short*)info->_data, 1);
-    
-//    for (size_t c = 0; c < 160; ++c) {
-//        short& sample = ((short*)info->_data)[c];
-//        sample = (sample >> 8 & 0x00ff) & (sample << 8 & 0xff00);
-//    }
-//    bytes2HexS(info->_data, 320);
-    //SP::printf("\n");
+
     return 160*2;
 }
 
@@ -136,6 +130,7 @@ void DecoderFileThread::run()
     Decoder_Interface_exit(_decodeState);
     
     fclose(file);
+    SP::printf("finish decode file");
 }
 
 
@@ -167,7 +162,7 @@ public:
      This callback is called when the audioUnit needs new data to play through the
      speakers. If you don't have any, just don't write anything in the buffers
      */
-    static OSStatus playbackCallback(void *inRefCon, 
+    static OSStatus playbackCallback(void *inRefCon,
                                      AudioUnitRenderActionFlags *ioActionFlags, 
                                      const AudioTimeStamp *inTimeStamp, 
                                      UInt32 inBusNumber, 
@@ -253,7 +248,7 @@ void AudioPlayUnit_context::initialize(float sampleRate, int channel, int sample
         return;
     
     try {
-#if 1
+#if 0
         // Initialize and configure the audio session
         XThrowIfError(AudioSessionInitialize(NULL, NULL, AudioPlayUnit_context::rioInterruptionListener, this), "couldn't initialize audio session for playback");
         
@@ -322,9 +317,9 @@ size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef inf
     
     for (size_t i = 0; i < _auUserData.ioData->mNumberBuffers; ++i) {   //channels
         if (_auUserData.ioData->mBuffers[i].mData) {    //alloc
-            memcpy(_auUserData.ioData->mBuffers[i].mData, info->_data + i*_auUserData.ioData->mBuffers[i].mDataByteSize, _auUserData.ioData->mBuffers[i].mDataByteSize);
+            memcpy(_auUserData.ioData->mBuffers[i].mData, info->_data, _auUserData.ioData->mBuffers[i].mDataByteSize);
         } else {
-            _auUserData.ioData->mBuffers[i].mData = info->_data + i*_auUserData.ioData->mBuffers[i].mDataByteSize;
+            _auUserData.ioData->mBuffers[i].mData = info->_data;
         }
     }
     return info->_size;
@@ -418,11 +413,12 @@ OSStatus AudioPlayUnit_context::stop()
 {
     try
     {
-        XThrowIfError(AudioOutputUnitStop(_audioUnit), "");
-        XThrowIfError(AudioUnitUninitialize(_audioUnit), "");
+        XThrowIfError(AudioOutputUnitStop(_audioUnit), "could not stop playback unit");
+        XThrowIfError(AudioUnitUninitialize(_audioUnit), "could not uninitialize playback unit");
+        XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose playback unit");
         _audioUnit= 0;
 
-        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session deactive\n");
+//        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session deactive\n");
     }
     catch (CAXException &e) {
 		char buf[256];
@@ -523,8 +519,8 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
         XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &outFormat, sizeof(outFormat)), "couldn't set play format");
         // Set output callback
         XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Global, kOutputBus, &inRenderProc, sizeof(AURenderCallbackStruct)) , "Could not setRender callback");
-//        flag = 0;
-//        XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_ShouldAllocateBuffer, kAudioUnitScope_Input, kOutputBus, &flag, sizeof(flag)), "Could not disable buffer allocation for the player");
+        flag = 0;
+        XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_ShouldAllocateBuffer, kAudioUnitScope_Input, kOutputBus, &flag, sizeof(flag)), "Could not disable buffer allocation for the player");
         // Initialise
         XThrowIfError(AudioUnitInitialize(audioUnit), "could not init audio unit");
 

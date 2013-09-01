@@ -29,7 +29,7 @@ void displayHexBin(const T& v, bool hex = true)
         }
         *buf = '\0';
         //printf("hex format displayed as %s\n", ptmp);
-        printf("%s", ptmp);
+        SP::printf("%s", ptmp);
         
         delete [] ptmp;
         
@@ -46,7 +46,7 @@ void displayHexBin(const T& v, bool hex = true)
         }
         *buf = '\0';
         //printf("bin format displayed as %s\n", ptmp);
-        printf("%s", ptmp);
+        SP::printf("%s", ptmp);
         delete [] ptmp;
     }
     

@@ -80,8 +80,7 @@
 
 - (IBAction)stopRecord:(id)sender {
 //    [self.recodeButton setTitle:@"开始" forState:UIControlStateNormal];
-//    [[AmrFileRecoder sharedInstance] stopRecode];
-   [[AmrFilePlayer sharedInstance] stop];
+   [[AmrFileRecoder sharedInstance] stopRecode];
 }
 
 - (IBAction)cancelRecord:(id)sender {

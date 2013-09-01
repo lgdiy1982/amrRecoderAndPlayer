@@ -114,7 +114,6 @@ void EncodeThread::run()
     fwrite(AMR_MAGIC_NUMBER, sizeof(char), 6, file);
     do {
         _buffer->eat(160*2, &_cbChunk);
-       
     } while (!_destroy);
     //Encoder_Interface_exit(&armEncodeState);
 
@@ -146,8 +145,7 @@ void EncodeThread::cancel()
 class AudioInputUnit_context
 {
 public:
-	static void AudioSessionInterruptionListener(void *inClientData, UInt32 inInterruptionState);
-    static void rioInterruptionListener(void *inClientData, UInt32 inInterruption);
+	static void rioInterruptionListener(void *inClientData, UInt32 inInterruptionState);
     static void propListener(	void *                  inClientData,
                                 AudioSessionPropertyID	inID,
                                 UInt32                  inDataSize,
@@ -223,23 +221,6 @@ bool AudioInputUnit_context::isInitialized()
     return _isInitialized;
 }
 
-void AudioInputUnit_context::AudioSessionInterruptionListener(void *inClientData, UInt32 inInterruptionState)
-{
-    printf ("Interrupted! inInterruptionState=%ld\n", inInterruptionState);
-    AudioInputUnit_context *This = (AudioInputUnit_context*)inClientData;
-    
-    switch (inInterruptionState) {
-        case kAudioSessionBeginInterruption:
-            //shutdown audio unit
-            break;
-        case kAudioSessionEndInterruption:
-//            CheckError(AudioQueueStart(appDelegate.audioQueue, 0), \
-                       "Couldn't restart the audio queue");
-            break;
-        default:
-            break;
-    };
-}
 
 
 
@@ -275,7 +256,7 @@ void AudioInputUnit_context::initialize(float sampleRate, int channel, int sampl
     if (_isInitialized) 
         return;
     try { 
-        
+#if 0
         // Initialize and configure the audio session
         XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, this), "couldn't initialize audio session for record");
         
@@ -291,7 +272,7 @@ void AudioInputUnit_context::initialize(float sampleRate, int channel, int sampl
         XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
         
         XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
-        
+#endif
         
         AURenderCallbackStruct callbackStruct;        
         callbackStruct.inputProc = recordingCallback;
@@ -423,11 +404,9 @@ void AudioInputUnit_context::stop()
     try {
         XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
         
-        XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop audio unit");
-        XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninit audio unit");
-        
-//        XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
-        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session deactive\n");
+        XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop record audio unit");
+        XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninitialize record audio unit");
+        XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose record unit");
     } catch(CAXException &e) {
         char buf[256];
         SP::printf("Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
@@ -440,6 +419,8 @@ void AudioInputUnit_context::stop()
     _encoder->getThreadControl().join();
 
 }
+
+
 
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -549,3 +530,74 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
 	
 	return 0;
 }
+
+
+
+
+void processBuffer(AudioBufferList* audioBufferList, float gain)
+{
+//    AudioBuffer sourceBuffer = audioBufferList->mBuffers[0];
+    
+    // we check here if the input data byte size has changed
+//	if (audioBuffer.mDataByteSize != sourceBuffer.mDataByteSize) {
+//        // clear old buffer
+//		free(audioBuffer.mData);
+//        // assing new byte size and allocate them on mData
+//		audioBuffer.mDataByteSize = sourceBuffer.mDataByteSize;
+//		audioBuffer.mData = malloc(sourceBuffer.mDataByteSize);
+//	}
+    
+    /**
+     Here we modify the raw data buffer now.
+     In my example this is a simple input volume gain.
+     iOS 5 has this on board now, but as example quite good.
+     */
+    
+    for (int i = 0; audioBufferList->mNumberBuffers; ++i) {
+        // loop over every packet
+        for (int nb = 0; nb < (audioBufferList->mBuffers[i].mDataByteSize / 2); nb++) {
+            short *editBuffer = (short*)audioBufferList->mBuffers[i].mData;
+            // we check if the gain has been modified to save resoures
+            if (gain != 0) {
+                // we need more accuracy in our calculation so we calculate with doubles
+                double gainSample = ((double)editBuffer[nb]) / 32767.0;
+                
+                /*
+                 at this point we multiply with our gain factor
+                 we dont make a addition to prevent generation of sound where no sound is.
+                 
+                 no noise
+                 0*10=0
+                 
+                 noise if zero
+                 0+10=10
+                 */
+                gainSample *= gain;
+                
+                /**
+                 our signal range cant be higher or lesser -1.0/1.0
+                 we prevent that the signal got outside our range
+                 */
+                gainSample = (gainSample < -1.0) ? -1.0 : (gainSample > 1.0) ? 1.0 : gainSample;
+                
+                /*
+                 This thing here is a little helper to shape our incoming wave.
+                 The sound gets pretty warm and better and the noise is reduced a lot.
+                 Feel free to outcomment this line and here again.
+                 
+                 You can see here what happens here http://silentmatt.com/javascript-function-plotter/
+                 Copy this to the command line and hit enter: plot y=(1.5*x)-0.5*x*x*x
+                 */
+                
+                gainSample = (1.5 * gainSample) - 0.5 * gainSample * gainSample * gainSample;
+                
+                // multiply the new signal back to short
+                gainSample = gainSample * 32767.0;
+                
+                // write calculate sample back to the buffer
+                editBuffer[nb] = (SInt16)gainSample;
+            }
+        }
+    }
+}
+

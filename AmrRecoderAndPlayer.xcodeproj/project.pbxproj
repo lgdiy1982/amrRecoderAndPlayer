@@ -12,7 +12,7 @@
 		4D129F8517C8929F00BAE372 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D129F8417C8929F00BAE372 /* CoreGraphics.framework */; };
 		4D129F8B17C8929F00BAE372 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4D129F8917C8929F00BAE372 /* InfoPlist.strings */; };
 		4D129F8D17C8929F00BAE372 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D129F8C17C8929F00BAE372 /* main.m */; };
-		4D129F9117C892A000BAE372 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D129F9017C892A000BAE372 /* AppDelegate.mm */; };
+		4D129F9117C892A000BAE372 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D129F9017C892A000BAE372 /* AppDelegate.mm */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4D129F9317C892A000BAE372 /* Default.png in Resources */ = {isa = PBXBuildFile; fileRef = 4D129F9217C892A000BAE372 /* Default.png */; };
 		4D129F9517C892A000BAE372 /* Default@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 4D129F9417C892A000BAE372 /* Default@2x.png */; };
 		4D129F9717C892A000BAE372 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 4D129F9617C892A000BAE372 /* Default-568h@2x.png */; };
@@ -365,9 +365,9 @@
 		4DF0B6D417CAEE3100C4E02E /* amr */ = {
 			isa = PBXGroup;
 			children = (
-				4DF0B6D517CAEE3100C4E02E /* amrFileCodec.h */,
-				4DF0B6D617CAEE3100C4E02E /* amrFileCodec.m */,
 				4DF0B6D717CAEE3100C4E02E /* include */,
+				4DF0B6D617CAEE3100C4E02E /* amrFileCodec.m */,
+				4DF0B6D517CAEE3100C4E02E /* amrFileCodec.h */,
 				4DF0B6DE17CAEE3100C4E02E /* lib */,
 			);
 			name = amr;

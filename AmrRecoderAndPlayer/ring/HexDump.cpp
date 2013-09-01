@@ -7,9 +7,9 @@ void bytes2HexS(const unsigned char* src, size_t size)
     for (unsigned i=0; i <size; ++i)
     {
         if (totalcount++%16 == 0)
-            printf("\n%0lx0h:", totalcount/16);
+            SP::printf("\n%0lx0h:", totalcount/16);
         displayHexBin( src[i]);
-        printf(" ");
+        SP::printf(" ");
     }
     totalcount = 0;
 }
