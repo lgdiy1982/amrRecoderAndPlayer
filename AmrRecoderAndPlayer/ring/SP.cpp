@@ -41,7 +41,7 @@ Monitor<Mutex> SP_context::_monitor;
 SP_context_Ptr SP_context::instance()
 {
     static SP_context_Ptr instance;
-    Monitor<Mutex>::Lock lock(_monitor);
+    //Monitor<Mutex>::Lock lock(_monitor);
     if (!instance.get()) {
         instance = new SP_context();
         instance->start();
@@ -84,9 +84,7 @@ void SP_context::printf(const char* format, va_list vl)
     bzero(buf, sizeof(buf));
     vsnprintf(buf, sizeof(buf), format, vl);
     Monitor<Mutex>::Lock lock(_monitor);
-    if (_l.empty()) {
-        _monitor.notify();
-    }
+    if (_l.empty()) _monitor.notify();
     _l.push_front(string(buf));
 }
 
@@ -102,6 +100,11 @@ void SP_context::run()
         
         if(_destroy)
             break;
+        {
+            Monitor<Mutex>::Lock lock(_monitor);
+            if (_l.empty() && _waitforFinished)
+                break;
+        }
         
         string msg;//
         {
@@ -110,11 +113,6 @@ void SP_context::run()
             _l.pop_back();
         }
         cout << msg ;
-        {
-            Monitor<Mutex>::Lock lock(_monitor);
-            if (_l.empty() && _waitforFinished)
-                break;            
-        }
     }
 }
 
@@ -122,18 +120,15 @@ void SP_context::destroy()
 {
     Monitor<Mutex>::Lock lock(_monitor);
     _destroy = true;
-    _monitor.notify();
+    if (_l.empty()) _monitor.notify();
 }
 
 void SP_context::waitforFinished()
 {
     Monitor<Mutex>::Lock lock(_monitor);
     _waitforFinished = true;
-    _monitor.notify();
+    if (_l.empty()) _monitor.notify();
 }
-
-
-
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -144,8 +139,6 @@ SP::SP()
 
 void SP::printf(const char* format, ...)
 {
-    char buf[2<<8];
-    bzero(buf, sizeof(buf));
     va_list vl;
     va_start(vl, format);
     SP_context::instance()->printf(format, vl);

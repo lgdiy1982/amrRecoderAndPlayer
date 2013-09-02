@@ -9,9 +9,11 @@
 #ifndef __AmrRecoderAndPlayer__SP__
 #define __AmrRecoderAndPlayer__SP__
 
+
+
 class SP
 {
-private:
+private: 
     SP();
 public:
     static void printf(const char* format, ...);

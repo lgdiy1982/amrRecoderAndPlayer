@@ -13,11 +13,17 @@
 @interface AmrFilePlayer()
 {
     NSString* _filepath;
+    PlaybackListener _listener;
 }
 
 
 
 @end
+
+static void progress(void* userData, double expired, double duration);
+static void finished(void* userData);
+
+
 static AmrFilePlayer* instance;
 @implementation AmrFilePlayer
 
@@ -27,24 +33,59 @@ static AmrFilePlayer* instance;
     }
     return instance;
 }
-- (void) startPlayWithFilePath : (NSString*) filepath
+
+- (id) init
 {
+    if( (self = [super init ]) != nil) {
+
+    }
+    return self;
+}
+
+- (Boolean) startPlayWithFilePath : (NSString*) filepath
+{
+    _listener.userData = (__bridge void*)self;
+    _listener.progress = progress;
+    _listener.finish = finished;
+    AudioPlayUnit::instance().setPlaybackListener(_listener);
     _filepath = filepath;
-    [self startPlay];
+    return AudioPlayUnit::instance().startPlay([_filepath UTF8String] );
 }
 
-
-- (void) startPlay
+- (Boolean) stopPlayback
 {
-//    if (!AudioPlayUnit::instance().isInitialized())
-//        AudioPlayUnit::instance().initialize(8000.0, 1, 16);
-    if (!AudioPlayUnit::instance().isRunning())
-        AudioPlayUnit::instance().startPlay([_filepath UTF8String] );
+     return AudioPlayUnit::instance().stopPlay() ;
 }
-
-
-- (void) stop
+     
+- (void) progress:(double) expired  totalDuration:(double) duration
 {
     
+    if (self.delegate) {
+        [self.delegate playbackProgress:expired totalDuration:duration];
+    }
+}
+
+- (void) finished
+{
+    if (self.delegate) {
+        [self.delegate playbackFinished];
+    }
 }
 @end
+
+
+void progress(void* userData, double expired, double duration)
+{
+    AmrFilePlayer* This = (__bridge AmrFilePlayer*)userData;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [This progress:expired totalDuration:duration];
+    });
+}
+
+void finished(void* userData)
+{
+    AmrFilePlayer* This = (__bridge AmrFilePlayer*)userData;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [This finished];
+    });
+}

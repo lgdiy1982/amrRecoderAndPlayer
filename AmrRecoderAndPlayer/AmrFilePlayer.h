@@ -8,19 +8,18 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol playerDelegate
+@protocol PlaybackDelegate
 @optional
-- (CGFloat) timeEscaped;
+- (void) playbackProgress:(double) expired totalDuration:(double) duration;
+- (void) playbackFinished;
 @end
 
 @interface AmrFilePlayer : NSObject
-@property (nonatomic) id<playerDelegate> id;
+@property (weak, nonatomic) id<PlaybackDelegate> delegate;
 
 
 + (id) sharedInstance;
-
-- (void) startPlayWithFilePath : (NSString*) filepath;
-- (void) startPlay;
-- (void) stop;
+- (Boolean) startPlayWithFilePath : (NSString*) filepath;
+- (Boolean) stopPlayback;
 
 @end

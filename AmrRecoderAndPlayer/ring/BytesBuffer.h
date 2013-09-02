@@ -39,6 +39,7 @@ public:
     BytesBuffer(size_t bufferSize);
     void feed(size_t size, BufferChunkRef cbChunk);
     void eat(size_t size, BufferChunkRef cbChunk);
+    //call this two terminated method to reset the status
     void terminatedFeed();
     void terminatedEat();
     bool empty();

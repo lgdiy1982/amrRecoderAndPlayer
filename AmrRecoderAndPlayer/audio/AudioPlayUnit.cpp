@@ -11,6 +11,7 @@
 #include <SP.h>
 #include <HexDump.h>
 
+#include <AudioUnit/AudioUnit.h>
 
 #define kOutputBus 0
 #define kInputBus 1
@@ -23,7 +24,22 @@ using namespace std;
 
 #define AMR_MAGIC_NUMBER "#!AMR\n"
 
+class ProgressListener : public IceUtil::Thread
+{
+public:
+    ProgressListener(class AudioPlayUnit_context& ref);
+    virtual void run();
+    void reachEnd();
+private:
+    Monitor<Mutex> _monitor;
+    bool _wait;
+    bool _destroy;
+    AudioPlayUnit_context& _ref;
+};
 
+typedef Handle<ProgressListener> ProgressListenerPtr;
+
+//------------------------------------------------------------------------------------------
 
 class DecoderFileThread : public IceUtil::Thread {
 public:
@@ -31,114 +47,25 @@ public:
     static size_t feedCallback(void* userData, const ChunkInfoRef,  bool terminated);
     virtual void run();
     void stop();
-    bool parseAmrFileFormat();
 private: 
     string filepath;
     BytesBufferPtr _buffer;
     bool _destroy;
     FILE *file;
     BufferChunk    _cbChunk;
-    void* _decodeState;
+    void*          _decodeState;
 
 };
 
 typedef IceUtil::Handle<DecoderFileThread> DecoderFileThreadPtr;
 
-//amr 11.20
-bool DecoderFileThread::parseAmrFileFormat()
-{
-    char buffer[32];
-    size_t ret = 0;
-    FILE* fp = fopen(filepath.c_str(), "rb");
-    ret = fread(buffer, 1, 6, fp);
-    if (ret == 0)  return false;
-    //verify file format
-    if (0 != strncmp(AMR_MAGIC_NUMBER, buffer, 6) ) {
-        //suppose 3gp file wrapper, find the amr data start postion;
-        return false;
-    }
-    //verify bitrate
-    ret = fread(buffer, 1, 1, fp);
-    if (ret == 0)   return false;
-    
-    
-    if (7 != (buffer[0] & 0x78) >> 3  )
-        return false;
-    fclose(fp);
-    return true;
-}
-
-
-
-size_t DecoderFileThread::feedCallback(void* userData, const ChunkInfoRef info,  bool terminated)
-{
-    static unsigned char buffer[32];
-    DecoderFileThread* This = (DecoderFileThread*)userData;
-    
-    if (terminated) {
-        This->_destroy = true;
-        return 0;
-    }
-    
-    
-    while (true){
-        size_t ret;
-        ret = fread(buffer, 1, 1, This->file);
-        if(ret < 1) {
-            This->_destroy = true;
-            This->_buffer->terminatedFeed();
-            return 0;
-        }
-        //err data, skip to next frame
-        if (7 != ((buffer[0] & 0x78) >> 3) ) {
-            continue;
-        }
-        //read the data
-        ret = fread(buffer+1, 1, 31, This->file);
-        if(ret < 31) {
-            This->_destroy = true;
-            This->_buffer->terminatedFeed();
-            return 0;
-        }
-        break;
-    }
-    bytes2HexS(buffer, 32);
-    Decoder_Interface_Decode(This->_decodeState, buffer, (short*)info->_data, 1);
-
-    return 160*2;
-}
-
-DecoderFileThread::DecoderFileThread(const char* path, BytesBufferPtr buffer)
-: filepath(path)
-, _buffer(buffer)
-, _destroy(false)
-, _decodeState(0)
-, file(0)
-{
-    _cbChunk._userData = this;
-    _cbChunk._callback = DecoderFileThread::feedCallback;
-}
-
-void DecoderFileThread::run()
-{
-    _decodeState = Decoder_Interface_init();
-    file = fopen(filepath.c_str(), "rb");
-    fseek(file, 6, 0);
-    do {
-        _buffer->feed(160*2, &_cbChunk);
-    } while (!_destroy);
-    Decoder_Interface_exit(_decodeState);
-    
-    fclose(file);
-    SP::printf("finish decode file");
-}
 
 
 #pragma -mark AudioPlayUnit_context
 //---------------------------------------------------------------------------------------------------------------------------------------------------------
 static int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRenderProc, const CAStreamBasicDescription& outFormat);
 
-
+typedef std::auto_ptr<PlaybackListener> PlaybackListenerPtr;
 class AudioPlayUnit_context
 {
 public:
@@ -146,17 +73,13 @@ public:
     AudioPlayUnit_context();
     ~AudioPlayUnit_context();
     
-    void initialize(float sampleRate, int channel, int sampleDeep);
-    void uninitialize();
-    bool isInitialized();
-    OSStatus start(const char* filepath);
-    OSStatus stop();
+    void initialize();
+
+    bool start(const char* filepath);
+    bool stop();
     bool isRunning();
-    static void rioInterruptionListener(void *inClientData, UInt32 inInterruptionState);
-    static void propListener(	void *                  inClientData,
-                                             AudioSessionPropertyID	inID,
-                                             UInt32                  inDataSize,
-                      const void *            inData);
+    void notifyEnd();   //called in render thread
+    void setPlaybackListener(const PlaybackListener& listener);
     static size_t eatCallback(void* userData, const ChunkInfoRef,  bool terminated);;
     /**
      This callback is called when the audioUnit needs new data to play through the
@@ -178,11 +101,21 @@ private:
     CAStreamBasicDescription _audioFormat;
     DecoderFileThreadPtr _decoder;
     std::string _filepath;
+    ProgressListenerPtr _progressListener;
+    Mutex               _mutex;
+    PlaybackListenerPtr _listenerPtr;
+    float               _duration;
+    double              _renderstartTimestamp;
 };
 
+//---
+
+static float parseAmrFileDuration(const string& filepath);
+//------------------------------------------------------------------------------------------------------------------
 
 AudioPlayUnit_context::AudioPlayUnit_context()
 :_audioUnit(0)
+
 {
     _isInitialized = false;
     setupBuffers();
@@ -191,7 +124,6 @@ AudioPlayUnit_context::AudioPlayUnit_context()
 
 AudioPlayUnit_context::~AudioPlayUnit_context()
 {
-    uninitialize();
 }
 
 OSStatus AudioPlayUnit_context::setupBuffers()
@@ -200,72 +132,21 @@ OSStatus AudioPlayUnit_context::setupBuffers()
     return noErr;
 }
 
-bool AudioPlayUnit_context::isInitialized()
+void AudioPlayUnit_context::notifyEnd()
 {
-    return _isInitialized;
-}
-
-void AudioPlayUnit_context::uninitialize()
-{
-    if (_isInitialized) 
-    {
-        AudioUnitUninitialize(_audioUnit);
-        _isInitialized = false;        
-    }
+    _progressListener->reachEnd();
 }
 
 
-void AudioPlayUnit_context::rioInterruptionListener(void *inClientData, UInt32 inInterruptionState)
+void AudioPlayUnit_context::setPlaybackListener(const PlaybackListener& listener)
 {
-    printf ("Interrupted! inInterruptionState=%ld\n", inInterruptionState);
-    AudioPlayUnit_context *This = (AudioPlayUnit_context*)inClientData;
-    
-    switch (inInterruptionState) {
-        case kAudioSessionBeginInterruption:
-            //shutdown audio unit
-            break;
-        case kAudioSessionEndInterruption:
-            //            CheckError(AudioQueueStart(appDelegate.audioQueue, 0), \
-            "Couldn't restart the audio queue");
-            break;
-        default:
-            break;
-    };
+    _listenerPtr = auto_ptr<PlaybackListener> (new PlaybackListener(listener));
 }
 
 
 
-void AudioPlayUnit_context::propListener(	void *                  inClientData,
-                                          AudioSessionPropertyID	inID,
-                                          UInt32                  inDataSize,
-                                          const void *            inData)
-{
-    
-}
-
-void AudioPlayUnit_context::initialize(float sampleRate, int channel, int sampleDeep) {
-    if(_isInitialized)
-        return;
-    
+void AudioPlayUnit_context::initialize() {
     try {
-#if 0
-        // Initialize and configure the audio session
-        XThrowIfError(AudioSessionInitialize(NULL, NULL, AudioPlayUnit_context::rioInterruptionListener, this), "couldn't initialize audio session for playback");
-        
-        UInt32 audioCategory = kAudioSessionCategory_MediaPlayback;
-        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category");
-        XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, this), "couldn't set property listener");
-//        
-        Float32 preferredBufferSize = .02;
-        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
-//
-        Float64 hwSampleRate;
-        UInt32 size = sizeof(hwSampleRate);
-        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
-        
-        XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
-#endif
-        
         AURenderCallbackStruct callbackStruct;
         callbackStruct.inputProc = AudioPlayUnit_context::playbackCallback;
         callbackStruct.inputProcRefCon = this;
@@ -278,13 +159,10 @@ void AudioPlayUnit_context::initialize(float sampleRate, int channel, int sample
     catch (CAXException &e) {
         char buf[256];
         SP::printf( "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
-        ///return 1;
     }
     catch (...) {
         SP::printf( "An unknown error occurred\n");
-        //return 1;
-    }	
-    _isInitialized = true;    
+    }
 }
 
 
@@ -309,19 +187,37 @@ size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef inf
     RenderChunk& _auUserData = (RenderChunk &)*userData;
     AudioPlayUnit_context* This = (AudioPlayUnit_context*)_auUserData.inRefCon;
     if (terminated && info->_data == 0) {
-        This->stop();
+        This->_buffer->terminatedEat();
+        This->notifyEnd();
         return 0;
     }
 
     _auUserData.ioData->mNumberBuffers = This->_audioFormat.mChannelsPerFrame;     //noninterleved
     
     for (size_t i = 0; i < _auUserData.ioData->mNumberBuffers; ++i) {   //channels
-        if (_auUserData.ioData->mBuffers[i].mData) {    //alloc
+        if (_auUserData.ioData->mBuffers[i].mData)     //alloc enabled
             memcpy(_auUserData.ioData->mBuffers[i].mData, info->_data, _auUserData.ioData->mBuffers[i].mDataByteSize);
-        } else {
+        else
             _auUserData.ioData->mBuffers[i].mData = info->_data;
-        }
     }
+    
+    
+    //calc
+    double expired = 0;
+    //double lasttime = 0;
+    if(This->_renderstartTimestamp == 0)
+        This->_renderstartTimestamp = _auUserData.inTimeStamp->mSampleTime;
+    else
+        expired = _auUserData.inTimeStamp->mSampleTime - This->_renderstartTimestamp;
+    
+    if (This->_listenerPtr.get()) This->_listenerPtr->progress(This->_listenerPtr->userData, expired, This->_duration);
+    SP::printf("mSampleTime %f \n", expired);
+//    if (expired/1000 - lasttime >= 1.0 ) {
+//        
+//        lasttime = expired/1000;
+//        
+//    }    
+    
     return info->_size;
 }
 
@@ -383,55 +279,74 @@ bool AudioPlayUnit_context::isRunning()
 
 
 
-OSStatus AudioPlayUnit_context::start(const char* filepath)
+bool AudioPlayUnit_context::start(const char* filepath)
 {
-    initialize(0, 0, 0);
-    _decoder = new DecoderFileThread(filepath, _buffer);
-    assert(_decoder->parseAmrFileFormat());
-    _decoder->start();
-    
+    if (isRunning()) {
+        return false;
+    }
     try
     {
+        initialize();
         XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
+        
+        _duration = parseAmrFileDuration(filepath);
+        if(_duration == -1) return false;
+        _renderstartTimestamp = 0;
+        _decoder = new DecoderFileThread(filepath, _buffer);
+        _decoder->start();
+        _progressListener = new ProgressListener(*this);
+        _progressListener->start();
     }
     catch (CAXException &e) {
 		char buf[256];
 		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
-		return 1;
+		return false;
 	}
 	catch (...) {
 		fprintf(stderr, "An unknown error occurred\n");
-		return 1;
+		return false;
 	}
-    return  0;
+
+    return  true;
 }
 
 /**
- Stop the audioUnit
+ Stop the audioUnit, may  be called in progress thread
  */
-OSStatus AudioPlayUnit_context::stop()
+bool AudioPlayUnit_context::stop()
 {
+    Mutex::Lock lock(_mutex);
     try
     {
+        if (!isRunning()) {
+            return false;
+        }
         XThrowIfError(AudioOutputUnitStop(_audioUnit), "could not stop playback unit");
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "could not uninitialize playback unit");
         XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose playback unit");
+        _buffer->terminatedEat();
         _audioUnit= 0;
-
-//        XThrowIfError(AudioSessionSetActive(false), "couldn't set audio session deactive\n");
+        _renderstartTimestamp = 0;
+        if (_decoder.get() != NULL && _decoder->isAlive()) {
+            _decoder->stop();
+            _decoder->getThreadControl().join();
+            _buffer->terminatedEat();
+        }
+        
+        if (_listenerPtr.get()) _listenerPtr->finish(_listenerPtr->userData);
     }
     catch (CAXException &e) {
 		char buf[256];
 		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
         
-		return 1;
+		return false;
 	}
 	catch (...) {
 		fprintf(stderr, "An unknown error occurred\n");
-		return 1;
+		return false;
 	}
 
-    return  0;
+    return  true;
 }
 
 
@@ -449,30 +364,14 @@ AudioPlayUnit::AudioPlayUnit()
     _ctx = std::auto_ptr<AudioPlayUnit_context>(new AudioPlayUnit_context);
 }
 
-void AudioPlayUnit::initialize(float sampleRate, int channel, int sampleDeep)
-{
-    _ctx->initialize(sampleRate, channel, sampleDeep);    
-}
 
-
-void AudioPlayUnit::uninitialize()
-{
-    _ctx->uninitialize();
-}
-
-bool AudioPlayUnit::isInitialized()
-{
-    return _ctx->isInitialized();
-}
-
-
-OSStatus AudioPlayUnit::startPlay(const char* filepath)
+bool AudioPlayUnit::startPlay(const char* filepath)
 {
     return _ctx->start(filepath);
 }
 
 
-OSStatus AudioPlayUnit::stopPlay()
+bool AudioPlayUnit::stopPlay()
 {
     return _ctx->stop();
 }
@@ -489,7 +388,12 @@ AudioPlayUnit::~AudioPlayUnit()
     
 }
 
+void AudioPlayUnit::setPlaybackListener(const PlaybackListener& listener)
+{
+    return _ctx->setPlaybackListener(listener);
+}
 
+//--------------------------------------------------------------------------------------------------
 int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRenderProc, const CAStreamBasicDescription& outFormat)
 {
     try {
@@ -537,4 +441,139 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
 	}
     return 0;
 }
+
+
+
+
+//---------------------------------------------------------------------------------------------------------
+
+
+//amr 11.20
+ float parseAmrFileDuration(const string& filepath)
+{
+    char buffer[32];
+    size_t ret = 0;
+    FILE* fp = fopen(filepath.c_str(), "rb");
+    ret = fread(buffer, 1, 6, fp);
+    if (ret == 0)  return -1;
+    //verify file format
+    if (0 != strncmp(AMR_MAGIC_NUMBER, buffer, 6) ) {
+        return -1;
+    }
+    //verify bitrate
+    ret = fread(buffer, 1, 1, fp);
+    if (ret == 0)   return -1;
+    if (7 != (buffer[0] & 0x78) >> 3  )
+        return -1;
+    fseek(fp, -1L, SEEK_END);
+    size_t sz = ftell(fp);
+    float duration = round(sz/320.f + 0.5);
+    fclose(fp);
+    return duration;
+}
+
+
+
+
+
+DecoderFileThread::DecoderFileThread(const char* path, BytesBufferPtr buffer)
+: filepath(path)
+, _buffer(buffer)
+, _destroy(false)
+, _decodeState(0)
+
+, file(0)
+{
+    _cbChunk._userData = this;
+    _cbChunk._callback = DecoderFileThread::feedCallback;
+}
+
+void DecoderFileThread::run()
+{
+    _decodeState = Decoder_Interface_init();
+    file = fopen(filepath.c_str(), "rb");
+    fseek(file, 6, 0);
+    do {
+        _buffer->feed(160*2, &_cbChunk);
+    } while (!_destroy);
+    Decoder_Interface_exit(_decodeState);
+    fclose(file);
+    SP::printf("\nfinish decode file\n");
+}
+
+void DecoderFileThread::stop()
+{
+    _destroy = true;
+    _buffer->terminatedFeed();
+}
+
+
+
+size_t DecoderFileThread::feedCallback(void* userData, const ChunkInfoRef info,  bool terminated)
+{
+    static unsigned char buffer[32];
+    DecoderFileThread* This = (DecoderFileThread*)userData;
+    
+    if (terminated) {
+        This->stop();
+        return 0;
+    }
+    
+    
+    while (true){
+        size_t ret;
+        ret = fread(buffer, 1, 1, This->file);
+        if(ret < 1) {
+            This->stop();
+            return 0;
+        }
+        //err data, skip to next frame
+        if (7 != ((buffer[0] & 0x78) >> 3) ) {
+            continue;
+        }
+        //read the data
+        ret = fread(buffer+1, 1, 31, This->file);
+        if(ret < 31) {
+            This->stop();
+            return 0;
+        }
+        break;
+    }
+    //bytes2HexS(buffer, 32);
+    Decoder_Interface_Decode(This->_decodeState, buffer, (short*)info->_data, 1);
+    
+    return 160*2;
+}
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+
+ProgressListener::ProgressListener(AudioPlayUnit_context& ref)
+:_ref(ref)
+,_wait(true)
+,_destroy(false)
+{
+    
+}
+
+void ProgressListener::reachEnd()
+{
+    Monitor<Mutex>::Lock lock(_monitor);
+    _wait = false;
+    _monitor.notify();
+}
+
+void ProgressListener::run()
+{
+    {
+        Monitor<Mutex>::Lock lock(_monitor);
+        while (_wait && !_destroy) {
+            _monitor.wait();
+        }
+    }
+    if (!_wait) {
+        _ref.stop();
+    }    
+}
+
 

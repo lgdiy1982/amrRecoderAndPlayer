@@ -9,7 +9,7 @@
 #import "ViewController.h"
 #import "AmrFileRecoder.h"
 #import "AmrFilePlayer.h"
-@interface ViewController () <UITableViewDataSource, UITableViewDelegate>
+@interface ViewController () <UITableViewDataSource, UITableViewDelegate, PlaybackDelegate>
 @property (weak, nonatomic) IBOutlet UIButton *playButton;
 - (IBAction)playOrStop:(id)sender;
 
@@ -31,6 +31,7 @@
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
+    ((AmrFilePlayer*)[AmrFilePlayer sharedInstance]).delegate = self;
 }
 
 - (void)didReceiveMemoryWarning
@@ -40,24 +41,24 @@
 }
 
 - (IBAction)playOrStop:(id)sender {
-    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-//    NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
-    NSLog(@"%@", path);
+//    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
+    NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
+//    NSLog(@"%@", path);
     [[AmrFilePlayer sharedInstance] startPlayWithFilePath:path];
 }
 
 
 
 - (IBAction)stopPlayback:(id)sender {
-    [[AmrFilePlayer sharedInstance]  stop];
+    [[AmrFilePlayer sharedInstance]  stopPlayback];
 }
 
 
 - (IBAction)startRecord:(id)sender {
 //    [self.recodeButton setTitle:@"停止" forState:UIControlStateNormal];
-    CFUUIDRef uuidObject = CFUUIDCreate(kCFAllocatorDefault);
-    NSString *uuidStr = (__bridge_transfer NSString *)CFUUIDCreateString(kCFAllocatorDefault, uuidObject);
-    CFRelease(uuidObject);
+//    CFUUIDRef uuidObject = CFUUIDCreate(kCFAllocatorDefault);
+//    NSString *uuidStr = (__bridge_transfer NSString *)CFUUIDCreateString(kCFAllocatorDefault, uuidObject);
+//    CFRelease(uuidObject);
     
     
 //    NSArray *paths=NSSearchPathForDirectoriesInDomains(NSDocumentDirectory
@@ -75,12 +76,12 @@
     
     NSLog(@"%@", fileName);
 
-    [[AmrFileRecoder sharedInstance] startRecodeWithFilePath:fileName];
+    [[AmrFileRecoder sharedInstance] startRecordWithFilePath:fileName];
 }
 
 - (IBAction)stopRecord:(id)sender {
 //    [self.recodeButton setTitle:@"开始" forState:UIControlStateNormal];
-   [[AmrFileRecoder sharedInstance] stopRecode];
+   [[AmrFileRecoder sharedInstance] stopRecord];
 }
 
 - (IBAction)cancelRecord:(id)sender {
@@ -96,4 +97,15 @@
     
     [super viewDidUnload];
 }
+
+- (void) playbackProgress:(double) expired totalDuration:(double) duration
+{
+    NSLog(@"playbackProgress %f %f", expired, duration);
+}
+
+- (void) playbackFinished
+{
+    NSLog(@"playbackFinished");
+}
+
 @end

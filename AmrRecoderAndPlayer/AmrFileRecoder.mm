@@ -28,8 +28,7 @@
 
 @interface AmrFileRecoder()
 {
-//    EncodeThreadPtr _encoderThread;
-    NSString* _filepath;
+
 }
 
 @end
@@ -54,31 +53,19 @@ static AmrFileRecoder* instance = nil;
     return self;
 }
 
-- (void) startRecode
+- (void) startRecordWithFilePath:(NSString*) filepath
+{
+    AudioInputUnit::instance().start([filepath UTF8String] );
+}
+
+- (void) stopRecord
+{
+    AudioInputUnit::instance().stop();
+}
+
+- (void) cancle
 {
     
-    if (!AudioInputUnit::instance().isInitialized())
-        AudioInputUnit::instance().initialize(8000.0, 1, 16);
-    if (!AudioInputUnit::instance().isRunning())
-        AudioInputUnit::instance().start([_filepath UTF8String] );
-//    _encoderThread = new EncodeThread( [_filepath UTF8String]) ;
-//    _encoderThread->start();
-}
-
-- (void) startRecodeWithFilePath:(NSString*) filepath
-{
-    _filepath = filepath;
-    [self startRecode];
-}
-
-- (void) stopRecode
-{
-    if (AudioInputUnit::instance().isRunning()) {
-        AudioInputUnit::instance().stop();
-//        AudioInputUnit::instance().flush();
-//        AudioInputUnit::instance().uninitialize();
-    }
-//    _encoderThread->getThreadControl().join();
 }
 
 - (void) dealloc

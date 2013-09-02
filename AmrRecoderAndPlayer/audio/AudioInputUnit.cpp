@@ -10,30 +10,6 @@
 //#include "CAStreamBasicDescription.h"
 #define kOutputBus 0 /*bus 0 represents a stream to output hardware*/
 #define kInputBus 1  /*bus 1 represents a stream from input hardware*/
-     
-
-
-void CheckError(OSStatus error, const char *operation)
-{
-    if (error == noErr) return;
-    
-    char errorString[20];
-    // See if it appears to be a 4-char-code
-    *(UInt32 *)(errorString + 1) = CFSwapInt32HostToBig(error);
-    if (isprint(errorString[1]) && isprint(errorString[2]) &&
-        isprint(errorString[3]) && isprint(errorString[4])) {
-        errorString[0] = errorString[5] = '\'';
-        errorString[6] = '\0';
-    } else
-        // No, format it as an integer
-        sprintf(errorString, "%d", (int)error);
-    
-    fprintf(stderr, "Error: %s (%s)\n", operation, errorString);
-    
-    //exit(1);
-}
-
-
 
 #define AMR_MAGIC_NUMBER "#!AMR\n"
 
@@ -82,7 +58,7 @@ size_t EncodeThread::callBackFun(void* userData, const ChunkInfoRef info,  bool 
     
     EncodeThread *This = (EncodeThread*)userData;
     if (info->_data == 0 && terminated) {
-        This->_destroy = true;
+        This->stop();
         SP::printf("nomore data, quit record\n");
         return 0;
 
@@ -130,7 +106,8 @@ EncodeThread::~EncodeThread()
 
 void EncodeThread::stop()
 {
-    
+    _destroy = true;
+    _buffer->terminatedEat();
 }
 
 void EncodeThread::cancel()
@@ -154,11 +131,10 @@ public:
     AudioInputUnit_context();
     ~AudioInputUnit_context();
     void initAudioInput();
-    void initialize(float sampleRate, int channel, int sampleDeep);
-    void uninitialize();
-    bool isInitialized();
-    void start(const char* path);
-    void stop();
+    void initialize();
+
+    bool start(const char* path);
+    bool stop();
     bool isRunning();
     static OSStatus recordingCallback(void *inRefCon,
                              AudioUnitRenderActionFlags *ioActionFlags, 
@@ -169,59 +145,30 @@ public:
     
     static size_t feedCallBackFun(void* userData, const ChunkInfoRef,  bool terminated);
 private:
-    void enableIO();
-    void callbackSetup();
-    void setupFomart();
     void setupBuffers();
     inline void makeBufferSilent (AudioBufferList * ioData);
 private:
     BytesBufferPtr _buffer;
 	AudioComponentInstance _audioUnit;
-	//AudioBufferList* _inputBuffer;   // this will hold the latest data from the microphone
-    int             _isInitialized;
     CAStreamBasicDescription _audioFormat;
     BufferChunk chunk;
 
-    
     std::string filepath;
-    
     EncodeThreadPtr _encoder;
-#ifdef RECODESTREAM
-    FILE* _recodestreamfile;
-#endif    
 };
 
 
 AudioInputUnit_context::AudioInputUnit_context()
 :_audioUnit(0)
 {
-    _isInitialized = false;
     setupBuffers();
 }
 
 
 AudioInputUnit_context::~AudioInputUnit_context()
 {
-    uninitialize();
+
 }
-
-
-void AudioInputUnit_context::uninitialize()
-{
-    if(_isInitialized)        
-    {
-//        CheckError( AudioUnitUninitialize(_audioUnit),
-//                   "Couldn't uninit");
-        _isInitialized = false;
-    }
-}
-
-bool AudioInputUnit_context::isInitialized()
-{
-    return _isInitialized;
-}
-
-
 
 
 void AudioInputUnit_context::propListener(	void *                  inClientData,
@@ -232,48 +179,11 @@ void AudioInputUnit_context::propListener(	void *                  inClientData,
     
 }
 
-void AudioInputUnit_context::rioInterruptionListener(void *inClientData, UInt32 inInterruption)
-{
-    try {
-        printf("Session interrupted! --- %s ---", inInterruption == kAudioSessionBeginInterruption ? "Begin Interruption" : "End Interruption");
-        AudioInputUnit_context *This = (AudioInputUnit_context*)inClientData;
-        if (inInterruption == kAudioSessionEndInterruption) {
-            // make sure we are again the active session
-            XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active");
-            XThrowIfError(AudioOutputUnitStart(This->_audioUnit), "couldn't start unit");
-        }
-        
-        if (inInterruption == kAudioSessionBeginInterruption) {
-            XThrowIfError(AudioOutputUnitStop(This->_audioUnit), "couldn't stop unit");
-        }
-    } catch (CAXException e) {
-        char buf[256];
-        fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
-    }
-}
 
-void AudioInputUnit_context::initialize(float sampleRate, int channel, int sampleDeep) {
-    if (_isInitialized) 
-        return;
-    try { 
-#if 0
-        // Initialize and configure the audio session
-        XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, this), "couldn't initialize audio session for record");
-        
-        UInt32 audioCategory = kAudioSessionCategory_RecordAudio;
-        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category for record");
-        XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, this), "couldn't set property listener");
-        
-        Float32 preferredBufferSize = .02;
-        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
-        
-        Float64 hwSampleRate;
-        UInt32 size = sizeof(hwSampleRate);
-        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
-        
-        XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
-#endif
-        
+
+void AudioInputUnit_context::initialize() {
+
+    try {         
         AURenderCallbackStruct callbackStruct;        
         callbackStruct.inputProc = recordingCallback;
         callbackStruct.inputProcRefCon = this;
@@ -286,7 +196,6 @@ void AudioInputUnit_context::initialize(float sampleRate, int channel, int sampl
     catch (...) {
 		fprintf(stderr, "An unknown error occurred\n");
 	}
-    _isInitialized = true;
 }
 
 
@@ -294,20 +203,19 @@ void AudioInputUnit_context::initialize(float sampleRate, int channel, int sampl
 
 bool AudioInputUnit_context::isRunning()
 {	
+	OSStatus err = noErr;
 	UInt32 auhalRunning = 0, size = 0;
-
+    
 	size = sizeof(auhalRunning);
 	if(_audioUnit)
 	{
-		CheckError( AudioUnitGetProperty(_audioUnit,
+		err = AudioUnitGetProperty(_audioUnit,
                                    kAudioOutputUnitProperty_IsRunning,
                                    kAudioUnitScope_Global,
                                    kInputBus, // input element
                                    &auhalRunning,
-                                   &size),
-                   "Couldn't get running state");
+                                   &size);
 	}
-
     return auhalRunning;
 }
 
@@ -382,42 +290,51 @@ void AudioInputUnit_context::setupBuffers()
 
 
 
-void AudioInputUnit_context::start(const char* path)
-{
-    
-	CheckError(AudioOutputUnitStart(_audioUnit),
-               "couldn't start unit");
-    
-#ifdef RECODESTREAM
-    //cout << "open file IosServerStream.pcm\n";
-    _recodestreamfile = fopen("IosServerStream.pcm", "wb");
-#endif
-    _encoder = new EncodeThread(path, _buffer);
-    _encoder->start();
+bool AudioInputUnit_context::start(const char* path)
+{    
+    try
+    {
+        initialize();
+        XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
+        _encoder = new EncodeThread(path, _buffer);
+        _encoder->start();
+    }
+    catch (CAXException &e) {
+		char buf[256];
+		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+		return false;
+	}
+	catch (...) {
+		fprintf(stderr, "An unknown error occurred\n");
+		return false;
+	}
+
+    return  true;
 }
 
 /**
  Stop the audioUnit
  */
-void AudioInputUnit_context::stop()
+bool AudioInputUnit_context::stop()
 {
     try {
         XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
-        
         XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop record audio unit");
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninitialize record audio unit");
         XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose record unit");
+        
+        _buffer->terminatedFeed();
+        _encoder->getThreadControl().join();
     } catch(CAXException &e) {
         char buf[256];
         SP::printf("Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        return false;
     }
     catch (...) {
 		SP::printf("An unknown error occurred\n");
+        return false;
 	}
-
-    _buffer->terminatedFeed();
-    _encoder->getThreadControl().join();
-
+    return true;
 }
 
 
@@ -439,33 +356,23 @@ AudioInputUnit::AudioInputUnit()
     _ctx = std::auto_ptr< AudioInputUnit_context>(new AudioInputUnit_context);
 }
 
-void AudioInputUnit::uninitialize()
-{
-    _ctx->uninitialize();
-}
 
-bool AudioInputUnit::isInitialized()
-{
-    return _ctx->isInitialized();
-}
 
-void AudioInputUnit::initialize(float sampleRate, int channel, int sampleDeep)
-{
-    _ctx->initialize(sampleRate, channel, sampleDeep);
-}
 
-void AudioInputUnit::start(const char* path)
+
+
+bool AudioInputUnit::start(const char* path)
 {
-    _ctx->start(path);
+    return _ctx->start(path);
 }
 
 
-void AudioInputUnit::stop()
+bool AudioInputUnit::stop()
 {
-    _ctx->stop();
+    return _ctx->stop();
 }
 
-void AudioInputUnit::cancel()
+bool AudioInputUnit::cancel()
 {
     
 }
@@ -475,10 +382,6 @@ bool AudioInputUnit::isRunning()
     return _ctx->isRunning();
 }
 
-void AudioInputUnit::flush()
-{
-//    _ctx->_ring->flush();
-}
 
 
 
@@ -486,8 +389,6 @@ AudioInputUnit::~AudioInputUnit()
 {
     
 }
-
-
 
 int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRenderProc, const CAStreamBasicDescription& outFormat)
 {
