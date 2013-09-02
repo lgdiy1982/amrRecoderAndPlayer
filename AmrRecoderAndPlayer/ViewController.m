@@ -9,15 +9,16 @@
 #import "ViewController.h"
 #import "AmrFileRecoder.h"
 #import "AmrFilePlayer.h"
-@interface ViewController () <UITableViewDataSource, UITableViewDelegate, PlaybackDelegate>
+#import "AmrFileRecoder.h"
+@interface ViewController () <UITableViewDataSource, UITableViewDelegate, PlaybackDelegate, RecodeDelegate>
 @property (weak, nonatomic) IBOutlet UIButton *playButton;
-- (IBAction)playOrStop:(id)sender;
-
+- (IBAction)play:(id)sender;
+- (IBAction)stopPlayback:(id)sender;
 @property (weak, nonatomic) IBOutlet UIButton *recodeButton;
 - (IBAction)startRecord:(id)sender;
 - (IBAction)stopRecord:(id)sender;
 - (IBAction)cancelRecord:(id)sender;
-- (IBAction)stopPlayback:(id)sender;
+
 
 
 
@@ -32,6 +33,7 @@
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
     ((AmrFilePlayer*)[AmrFilePlayer sharedInstance]).delegate = self;
+    ((AmrFileRecoder*)[AmrFileRecoder sharedInstance]).delegate = self;
 }
 
 - (void)didReceiveMemoryWarning
@@ -40,9 +42,9 @@
     // Dispose of any resources that can be recreated.
 }
 
-- (IBAction)playOrStop:(id)sender {
-//    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-    NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
+- (IBAction)play:(id)sender {
+    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
+    //NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
 //    NSLog(@"%@", path);
     [[AmrFilePlayer sharedInstance] startPlayWithFilePath:path];
 }
@@ -68,14 +70,7 @@
 //    NSString *fileName=[[paths objectAtIndex:0] stringByAppendingPathComponent:uuidStr];
 
     NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-//    [[NSFileManager defaultManager] changeCurrentDirectoryPath:[paths stringByExpandingTildeInPath]];
-//    [[NSFileManager defaultManager] createFileAtPath:uuidStr contents:nil attributes:nil];
-//    NSURL *tmpDirURL = [NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES];
-//    NSURL *fileURL = [[tmpDirURL URLByAppendingPathComponent:@"pkm"] URLByAppendingPathExtension:@"jpg"];
-//    NSLog(@"fileURL: %@", [fileURL path]);
-    
     NSLog(@"%@", fileName);
-
     [[AmrFileRecoder sharedInstance] startRecordWithFilePath:fileName];
 }
 
@@ -85,7 +80,7 @@
 }
 
 - (IBAction)cancelRecord:(id)sender {
-    
+    [[AmrFileRecoder sharedInstance] cancelRecord];
 }
 
 #pragma -mark tableview delegate
@@ -100,12 +95,24 @@
 
 - (void) playbackProgress:(double) expired totalDuration:(double) duration
 {
-    NSLog(@"playbackProgress %f %f", expired, duration);
+//    NSLog(@"playbackProgress %f %f", expired, duration);
 }
 
 - (void) playbackFinished
 {
     NSLog(@"playbackFinished");
 }
+
+
+- (void) recordProgress:(double) acumulateDuration
+{
+//    NSLog(@"recordProgress %f", acumulateDuration);
+}
+
+- (void) recordFinished
+{
+    NSLog(@"recordFinished");
+}
+
 
 @end

@@ -15,7 +15,7 @@
 @end
 
 @interface AmrFilePlayer : NSObject
-@property (weak, nonatomic) id<PlaybackDelegate> delegate;
+@property (assign, nonatomic) id<PlaybackDelegate> delegate;
 
 
 + (id) sharedInstance;

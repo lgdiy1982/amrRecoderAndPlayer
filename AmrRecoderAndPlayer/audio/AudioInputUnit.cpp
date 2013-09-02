@@ -34,91 +34,32 @@ public:
     static size_t callBackFun(void* userData, const ChunkInfoRef,  bool terminated);
     
     void stop();
+    void waitForCompleted();
     void cancel();
     virtual void run();
     
 private:
-    //    PopBufferChunk  chunk;
+    //PopBufferChunk  chunk;
     std::string _filepath;
     void * armEncodeState;
     bool  _destroy;
+    bool  _cancel;
     BytesBufferPtr _buffer;
     BufferChunk    _cbChunk;
-    unsigned char  armFrame[32];
+    unsigned char  _armFrame[32];
     FILE *file;
 };
 
 typedef IceUtil::Handle<EncodeThread> EncodeThreadPtr;
 
-size_t EncodeThread::callBackFun(void* userData, const ChunkInfoRef info,  bool terminated)
-{
-#ifdef DEBUG
-    
-#endif
-    
-    EncodeThread *This = (EncodeThread*)userData;
-    if (info->_data == 0 && terminated) {
-        This->stop();
-        SP::printf("nomore data, quit record\n");
-        return 0;
 
-    }
-    if (info->_size < 160*2) {
-        return info->_size;
-    }
-    int ret = Encoder_Interface_Encode(This->armEncodeState, MR122, (const short*)info->_data, This->armFrame, 0);
-    fwrite(This->armFrame, sizeof(unsigned char), ret, This->file);
-    return  info->_size;
-}
-
-
-EncodeThread::EncodeThread(const char* filepath, BytesBufferPtr buffer) :
-_filepath(filepath)
-, _buffer(buffer)
-, file(0)
-,_destroy(false)
-{
-    _cbChunk._callback = EncodeThread::callBackFun;
-    _cbChunk._userData = this;
-}
-
-void EncodeThread::run()
-{
-    int dtx = 0;
-    armEncodeState = Encoder_Interface_init(dtx);
-    file = fopen(_filepath.c_str(), "wb+");
-    fwrite(AMR_MAGIC_NUMBER, sizeof(char), 6, file);
-    do {
-        _buffer->eat(160*2, &_cbChunk);
-    } while (!_destroy);
-    //Encoder_Interface_exit(&armEncodeState);
-
-    fclose(file);    
-    SP::printf("save file\n");
-    
-}
-
-EncodeThread::~EncodeThread()
-{
-    
-}
-
-
-void EncodeThread::stop()
-{
-    _destroy = true;
-    _buffer->terminatedEat();
-}
-
-void EncodeThread::cancel()
-{
-    
-}
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 //#define RECODESTREAM
+
+typedef std::auto_ptr<RecordListener> RecordListenerPtr;
 class AudioInputUnit_context
 {
 public:
@@ -130,12 +71,13 @@ public:
     friend class AudioInputUnit;
     AudioInputUnit_context();
     ~AudioInputUnit_context();
-    void initAudioInput();
-    void initialize();
+    int initialize();
 
     bool start(const char* path);
     bool stop();
+    bool cancel();
     bool isRunning();
+    void setRecordListener(const RecordListener& listener);
     static OSStatus recordingCallback(void *inRefCon,
                              AudioUnitRenderActionFlags *ioActionFlags, 
                              const AudioTimeStamp *inTimeStamp,
@@ -155,6 +97,8 @@ private:
 
     std::string filepath;
     EncodeThreadPtr _encoder;
+    RecordListenerPtr _listener;
+    double      _renderstartTimestamp;
 };
 
 
@@ -181,7 +125,7 @@ void AudioInputUnit_context::propListener(	void *                  inClientData,
 
 
 
-void AudioInputUnit_context::initialize() {
+int AudioInputUnit_context::initialize() {
 
     try {         
         AURenderCallbackStruct callbackStruct;        
@@ -192,10 +136,13 @@ void AudioInputUnit_context::initialize() {
     } catch(CAXException &e) {
         char buf[256];
 		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        return 1;
     }
     catch (...) {
 		fprintf(stderr, "An unknown error occurred\n");
+        return 1;
 	}
+    return 0;
 }
 
 
@@ -237,9 +184,9 @@ size_t AudioInputUnit_context::feedCallBackFun(void* userData, const ChunkInfoRe
     _auUserData.ioData->mNumberBuffers =  This->_audioFormat.mChannelsPerFrame;     //noninterleved
 
     for (size_t i = 0; i < _auUserData.ioData->mNumberBuffers; ++i) {   //channels
-        _auUserData.ioData->mBuffers[0].mNumberChannels = 1;
-        _auUserData.ioData->mBuffers[0].mDataByteSize = info->_size/_auUserData.ioData->mNumberBuffers;
-        _auUserData.ioData->mBuffers[0].mData = info->_data + i*info->_size/_auUserData.ioData->mNumberBuffers;
+        _auUserData.ioData->mBuffers[i].mNumberChannels = 1;
+        _auUserData.ioData->mBuffers[i].mDataByteSize = info->_size/_auUserData.ioData->mNumberBuffers;
+        _auUserData.ioData->mBuffers[i].mData = info->_data + i*info->_size/_auUserData.ioData->mNumberBuffers;
     }
 
     //Get the new audio data
@@ -251,7 +198,13 @@ size_t AudioInputUnit_context::feedCallBackFun(void* userData, const ChunkInfoRe
                           _auUserData.inNumberFrames, /* of frames requested*/
                           _auUserData.ioData );/* Audio Buffer List to hold data*/
 
-	
+    double expired = 0;
+    if(This->_renderstartTimestamp == 0)
+        This->_renderstartTimestamp = _auUserData.inTimeStamp->mSampleTime;
+    else
+        expired = _auUserData.inTimeStamp->mSampleTime - This->_renderstartTimestamp;
+    
+	if (This->_listener.get()) This->_listener->progress(This->_listener->userData, expired);
     free(_auUserData.ioData);
     return info->_size;
 }
@@ -285,7 +238,7 @@ OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
 
 void AudioInputUnit_context::setupBuffers()
 {
-    _buffer = new BytesBuffer(2<<10);
+    _buffer = new BytesBuffer(2<<12);
 }
 
 
@@ -294,8 +247,9 @@ bool AudioInputUnit_context::start(const char* path)
 {    
     try
     {
-        initialize();
-        XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
+        XThrowIfError(initialize(), "could not initialize record unit");
+        XThrowIfError(AudioOutputUnitStart(_audioUnit), "could not start record unit");
+        _renderstartTimestamp = 0;
         _encoder = new EncodeThread(path, _buffer);
         _encoder->start();
     }
@@ -318,13 +272,18 @@ bool AudioInputUnit_context::start(const char* path)
 bool AudioInputUnit_context::stop()
 {
     try {
-        XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
+        if (!isRunning()) return true;
         XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop record audio unit");
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninitialize record audio unit");
         XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose record unit");
-        
+        _renderstartTimestamp = 0;
         _buffer->terminatedFeed();
+        
+        _encoder->stop();
+        
         _encoder->getThreadControl().join();
+        _buffer->terminatedEat();
+        if (_listener.get()) _listener->finish(_listener->userData);
     } catch(CAXException &e) {
         char buf[256];
         SP::printf("Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
@@ -337,8 +296,39 @@ bool AudioInputUnit_context::stop()
     return true;
 }
 
+bool AudioInputUnit_context::cancel()
+{
+    try {
+        if (!isRunning()) return true;
+        
+        XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
+        XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop record audio unit");
+        XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninitialize record audio unit");
+        XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose record unit");
+        _renderstartTimestamp = 0;
+        
+        _encoder->cancel();     //cancel flag set first
+        _buffer->terminatedFeed();
+        
+        _encoder->getThreadControl().join();
+        _buffer->terminatedEat();
+        if (_listener.get()) _listener->finish(_listener->userData);
+    } catch(CAXException &e) {
+        char buf[256];
+        SP::printf("Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        return false;
+    }
+    catch (...) {
+		SP::printf("An unknown error occurred\n");
+        return false;
+	}
+    return true;
+}
 
-
+void AudioInputUnit_context::setRecordListener(const RecordListener& listener)
+{
+    _listener = RecordListenerPtr(new RecordListener(listener));
+}
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -374,16 +364,13 @@ bool AudioInputUnit::stop()
 
 bool AudioInputUnit::cancel()
 {
-    
+    return _ctx->cancel();
 }
 
-bool AudioInputUnit::isRunning()
+void AudioInputUnit::setRecordListener(const RecordListener& listener)
 {
-    return _ctx->isRunning();
+    _ctx->setRecordListener(listener);
 }
-
-
-
 
 AudioInputUnit::~AudioInputUnit()
 {
@@ -409,8 +396,7 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
 		XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input, kInputBus, &one, sizeof(one)), "couldn't enable record on the remote I/O unit");
         one = 0;
         XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &one, sizeof(one)), "couldn't disable play on the remote I/O unit");
-        
-		//XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_SetRenderCallback , kAudioUnitScope_Input, kInputBus, &inRenderProc, sizeof(inRenderProc)), "couldn't set remote i/o render callback");
+
         XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioOutputUnitProperty_SetInputCallback , kAudioUnitScope_Input, kInputBus, &inRenderProc, sizeof(inRenderProc)), "couldn't set remote i/o render callback");
 		XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, kInputBus, &outFormat, sizeof(outFormat)), "couldn't set the remote I/O unit's input client format");
         // Disable buffer allocation for the recorder (optional - do this if we want to pass in our own)
@@ -432,8 +418,80 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
 	return 0;
 }
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+size_t EncodeThread::callBackFun(void* userData, const ChunkInfoRef info,  bool terminated)
+{
+    EncodeThread *This = (EncodeThread*)userData;
+    if (info->_data == 0 && terminated) {
+        This->stop();
+        SP::printf("\nnomore data, quit record\n");
+        return 0;
+    }
+    if (info->_size < 160*2) {
+        return info->_size;
+    }
+    int ret = Encoder_Interface_Encode(This->armEncodeState, MR122, (const short*)info->_data, This->_armFrame, 0);
+    fwrite(This->_armFrame, sizeof(unsigned char), ret, This->file);
+    return  info->_size;
+}
 
 
+EncodeThread::EncodeThread(const char* filepath, BytesBufferPtr buffer)
+:_filepath(filepath)
+,_buffer(buffer)
+,file(0)
+,_destroy(false)
+,_cancel(false)
+{
+    _cbChunk._callback = EncodeThread::callBackFun;
+    _cbChunk._userData = this;
+}
+
+void EncodeThread::run()
+{
+    int dtx = 0;
+    armEncodeState = Encoder_Interface_init(dtx);
+    file = fopen(_filepath.c_str(), "wb+");
+    fwrite(AMR_MAGIC_NUMBER, sizeof(char), 6, file);
+    do {
+        _buffer->eat(160*2, &_cbChunk);
+    } while (!_destroy && !_cancel);
+    //Encoder_Interface_exit(&armEncodeState);
+    
+    fclose(file);
+    if (_cancel) {
+        ::remove(_filepath.c_str());
+        SP::printf("remove file\n");
+    } else
+        SP::printf("\nsave file\n");
+}
+
+EncodeThread::~EncodeThread()
+{
+    
+}
+
+void EncodeThread::waitForCompleted()
+{
+    
+}
+
+void EncodeThread::stop()
+{
+    if (!_destroy) {
+        _destroy = true;
+        
+    }
+}
+
+void EncodeThread::cancel()
+{
+    if (!_cancel) {
+        _cancel = true;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void processBuffer(AudioBufferList* audioBufferList, float gain)
 {

@@ -39,7 +39,7 @@ public:
     BytesBuffer(size_t bufferSize);
     void feed(size_t size, BufferChunkRef cbChunk);
     void eat(size_t size, BufferChunkRef cbChunk);
-    //call this two terminated method to reset the status
+    //call this two terminated method to reset the status, notice, the oppsite termiate method must be called after done the last feed/eat action. usually in out of the thread runloop
     void terminatedFeed();
     void terminatedEat();
     bool empty();

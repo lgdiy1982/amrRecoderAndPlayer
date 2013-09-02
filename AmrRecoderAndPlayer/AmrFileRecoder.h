@@ -9,14 +9,17 @@
 #import <Foundation/Foundation.h>
 
 @protocol RecodeDelegate
-- (CGFloat) timeEscaped;
-
-
+@optional
+- (void) recordProgress:(double) acumulateDuration;;
+- (void) recordFinished;
+- (void) updateMeter:(double) meter;
 @end
 
 @interface AmrFileRecoder : NSObject
+@property (assign, nonatomic) id<RecodeDelegate> delegate;
+
 + (id) sharedInstance;
-- (void) startRecordWithFilePath:(NSString*) filepath;
-- (void) stopRecord;
-- (void) cancle;
+- (Boolean) startRecordWithFilePath:(NSString*) filepath;
+- (Boolean) stopRecord;
+- (Boolean) cancelRecord;
 @end

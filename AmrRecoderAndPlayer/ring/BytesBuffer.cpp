@@ -63,6 +63,7 @@ void BytesBuffer_context::feed(size_t size, BufferChunkRef cbChunk)
     {
         Monitor<RecMutex>::Lock lock(_monitor);
         if (_feedTerminated) return;
+        
         while( size > _feedCapacity && !_eatTerminated) {
             _currentFeedRequestSize = size;
             _monitor.wait();
@@ -126,17 +127,16 @@ void BytesBuffer_context::feed(size_t size, BufferChunkRef cbChunk)
 
 void BytesBuffer_context::eat(size_t size, BufferChunkRef cbChunk)
 {
-    //bool canEat = false;
     {
         Monitor<RecMutex>::Lock lock(_monitor);
         if (_eatTerminated)  return;
         while(size > _eatCapacity && !_feedTerminated) {
             _currentEatRequestSize = size;
+            SP::printf("\nwait eating, feeding %s\n", _feedTerminated ? "terminated" : "not terminated");
             _monitor.wait();
         }
         _currentEatRequestSize = 0;
     }
-
     //terminated
     size = size > _eatCapacity ? _eatCapacity : size;
 
@@ -199,19 +199,26 @@ void BytesBuffer_context::clean()
 
     _feedTerminated = false;
     _eatTerminated = false;
+    SP::printf("-------------clean\n");
 }
 
 void BytesBuffer_context::terminateFeed()
 {
     Monitor<RecMutex>::Lock lock(_monitor);
-    if(_feedTerminated != true)
+    if(!_feedTerminated )
     {
         _feedTerminated = true;
         
         if (_eatTerminated)
+        {
+            SP::printf("feeding over\n");
             clean();
+        }
         else
+        {
             _monitor.notify();
+            SP::printf("notify the eatting part, feeding terminated\n");
+        }
     }
 }
 
@@ -222,10 +229,16 @@ void BytesBuffer_context::terminateEat()
     {
         _eatTerminated = true;
         
-        if (_eatTerminated) 
+        if (_feedTerminated)
+        {
+            SP::printf("eatting over\n");
             clean();
+        }
         else
+        {
             _monitor.notify();
+            SP::printf("notify the feeding part, eatting terminated\n");
+        }
     }
 }
 

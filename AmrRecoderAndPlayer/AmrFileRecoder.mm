@@ -8,27 +8,13 @@
 
 #import "AmrFileRecoder.h"
 #include "audio/AudioInputUnit.h"
-#include "ring/ReStartableThread.h"
-#include <memory>
-#include <string>
-#include <interf_enc.h>
-#include <iostream>
-
-
-#define AMR_MAGIC_NUMBER "#!AMR\n"
-
-#define PCM_FRAME_SIZE 160 // 8khz 8000*0.02=160
-#define MAX_AMR_FRAME_SIZE 32
-#define AMR_FRAME_COUNT_PER_SECOND 50
-
-
 //////////////////////////////
 
 
 
 @interface AmrFileRecoder()
 {
-
+    RecordListener _listener;
 }
 
 @end
@@ -36,8 +22,10 @@
 
 
 static AmrFileRecoder* instance = nil;
-@implementation AmrFileRecoder
+static void progress(void* userData, double acumulateDuration);
+static void finished(void* userData);
 
+@implementation AmrFileRecoder
 + (id) sharedInstance{
     if (instance == nil) {
         instance = [[AmrFileRecoder alloc] init];
@@ -48,30 +36,65 @@ static AmrFileRecoder* instance = nil;
 - (id) init
 {
     if ((self = [super init]) != nil) {
-
+        _listener.userData = self;
+        _listener.progress = progress;
+        _listener.finish = finished;
+        AudioInputUnit::instance().setRecordListener(_listener);
     }
     return self;
 }
 
-- (void) startRecordWithFilePath:(NSString*) filepath
-{
-    AudioInputUnit::instance().start([filepath UTF8String] );
-}
-
-- (void) stopRecord
-{
-    AudioInputUnit::instance().stop();
-}
-
-- (void) cancle
+- (Boolean) startRecordWithFilePath:(NSString*) filepath
 {
     
+    return AudioInputUnit::instance().start([filepath UTF8String] );
+}
+
+- (Boolean) stopRecord
+{
+    return AudioInputUnit::instance().stop();
+}
+
+- (Boolean) cancelRecord
+{
+    return AudioInputUnit::instance().cancel();
 }
 
 - (void) dealloc
 {
     [super dealloc];
 }
+
+- (void) progress:(double) acumulateDuration
+{
+    if(self.delegate)
+    {
+        [self.delegate recordProgress: acumulateDuration];
+    }
+}
+
+- (void) finished
+{
+    if(self.delegate)
+    {
+        [self.delegate recordFinished];
+    }
+}
 @end
 
+void progress(void* userData, double acumulateDuration)
+{
+    AmrFileRecoder* This = (AmrFileRecoder*)userData;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [This progress:acumulateDuration];
+    });
+}
+
+void finished(void* userData)
+{
+    AmrFileRecoder* This = (AmrFileRecoder*)userData;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [This finished];
+    });
+}
 

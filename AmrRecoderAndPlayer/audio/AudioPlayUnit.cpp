@@ -73,10 +73,11 @@ public:
     AudioPlayUnit_context();
     ~AudioPlayUnit_context();
     
-    void initialize();
+    int initialize();
 
     bool start(const char* filepath);
     bool stop();
+    bool passiveStop();
     bool isRunning();
     void notifyEnd();   //called in render thread
     void setPlaybackListener(const PlaybackListener& listener);
@@ -104,8 +105,8 @@ private:
     ProgressListenerPtr _progressListener;
     Mutex               _mutex;
     PlaybackListenerPtr _listenerPtr;
-    float               _duration;
-    double              _renderstartTimestamp;
+    double               _duration;
+    double               _renderstartTimestamp;
 };
 
 //---
@@ -140,12 +141,12 @@ void AudioPlayUnit_context::notifyEnd()
 
 void AudioPlayUnit_context::setPlaybackListener(const PlaybackListener& listener)
 {
-    _listenerPtr = auto_ptr<PlaybackListener> (new PlaybackListener(listener));
+    _listenerPtr = PlaybackListenerPtr (new PlaybackListener(listener));
 }
 
 
 
-void AudioPlayUnit_context::initialize() {
+int AudioPlayUnit_context::initialize() {
     try {
         AURenderCallbackStruct callbackStruct;
         callbackStruct.inputProc = AudioPlayUnit_context::playbackCallback;
@@ -154,15 +155,17 @@ void AudioPlayUnit_context::initialize() {
         //_audioFormat.mFormatFlags = kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger;
         _audioFormat.Print();
         XThrowIfError(SetupRemoteIO(_audioUnit, callbackStruct, _audioFormat), "couldn't setup remote i/o unit");
-        
     }
     catch (CAXException &e) {
         char buf[256];
         SP::printf( "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        return 1;
     }
     catch (...) {
         SP::printf( "An unknown error occurred\n");
+        return 1;
     }
+    return 0;
 }
 
 
@@ -186,8 +189,7 @@ size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef inf
 {
     RenderChunk& _auUserData = (RenderChunk &)*userData;
     AudioPlayUnit_context* This = (AudioPlayUnit_context*)_auUserData.inRefCon;
-    if (terminated && info->_data == 0) {
-        This->_buffer->terminatedEat();
+    if (terminated && info->_data == 0) {        
         This->notifyEnd();
         return 0;
     }
@@ -211,13 +213,7 @@ size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef inf
         expired = _auUserData.inTimeStamp->mSampleTime - This->_renderstartTimestamp;
     
     if (This->_listenerPtr.get()) This->_listenerPtr->progress(This->_listenerPtr->userData, expired, This->_duration);
-    SP::printf("mSampleTime %f \n", expired);
-//    if (expired/1000 - lasttime >= 1.0 ) {
-//        
-//        lasttime = expired/1000;
-//        
-//    }    
-    
+    //SP::printf("mSampleTime %f \n", expired);
     return info->_size;
 }
 
@@ -286,10 +282,13 @@ bool AudioPlayUnit_context::start(const char* filepath)
     }
     try
     {
-        initialize();
+        XThrowIfError(initialize() , "initialize play audio unit error");
         XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
         
         _duration = parseAmrFileDuration(filepath);
+        if (_duration == -1) {
+            return false;
+        }
         if(_duration == -1) return false;
         _renderstartTimestamp = 0;
         _decoder = new DecoderFileThread(filepath, _buffer);
@@ -324,15 +323,14 @@ bool AudioPlayUnit_context::stop()
         XThrowIfError(AudioOutputUnitStop(_audioUnit), "could not stop playback unit");
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "could not uninitialize playback unit");
         XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose playback unit");
-        _buffer->terminatedEat();
+        _buffer->terminatedEat();   //terminate eatting first
         _audioUnit= 0;
         _renderstartTimestamp = 0;
         if (_decoder.get() != NULL && _decoder->isAlive()) {
             _decoder->stop();
             _decoder->getThreadControl().join();
-            _buffer->terminatedEat();
         }
-        
+        _buffer->terminatedFeed();      //terminate feeding last
         if (_listenerPtr.get()) _listenerPtr->finish(_listenerPtr->userData);
     }
     catch (CAXException &e) {
@@ -350,6 +348,40 @@ bool AudioPlayUnit_context::stop()
 }
 
 
+bool AudioPlayUnit_context::passiveStop()
+{
+    Mutex::Lock lock(_mutex);
+    try
+    {
+        if (!isRunning()) {
+            return false;
+        }
+        XThrowIfError(AudioOutputUnitStop(_audioUnit), "could not stop playback unit");
+        XThrowIfError(AudioUnitUninitialize(_audioUnit), "could not uninitialize playback unit");
+        XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose playback unit");
+        _buffer->terminatedEat();   //terminate eatting last
+        _audioUnit= 0;
+        _renderstartTimestamp = 0;
+        if (_decoder.get() != NULL && _decoder->isAlive()) {
+            _decoder->stop();
+            _decoder->getThreadControl().join();
+        }         
+        if (_listenerPtr.get()) _listenerPtr->finish(_listenerPtr->userData);
+    }
+    catch (CAXException &e) {
+		char buf[256];
+		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        
+		return false;
+	}
+	catch (...) {
+		fprintf(stderr, "An unknown error occurred\n");
+		return false;
+	}
+    
+    return  true;
+
+}
 
 
 //////////////////////////////////////////////////////////////////
@@ -454,6 +486,9 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
     char buffer[32];
     size_t ret = 0;
     FILE* fp = fopen(filepath.c_str(), "rb");
+    if (!fp) return -1;
+        
+    
     ret = fread(buffer, 1, 6, fp);
     if (ret == 0)  return -1;
     //verify file format
@@ -504,7 +539,6 @@ void DecoderFileThread::run()
 void DecoderFileThread::stop()
 {
     _destroy = true;
-    _buffer->terminatedFeed();
 }
 
 
@@ -519,11 +553,11 @@ size_t DecoderFileThread::feedCallback(void* userData, const ChunkInfoRef info, 
         return 0;
     }
     
-    
     while (true){
         size_t ret;
         ret = fread(buffer, 1, 1, This->file);
         if(ret < 1) {
+            This->_buffer->terminatedFeed();    //feeding terminated first
             This->stop();
             return 0;
         }
@@ -534,6 +568,7 @@ size_t DecoderFileThread::feedCallback(void* userData, const ChunkInfoRef info, 
         //read the data
         ret = fread(buffer+1, 1, 31, This->file);
         if(ret < 31) {
+            This->_buffer->terminatedFeed();    //feeding terminated first
             This->stop();
             return 0;
         }
@@ -572,7 +607,7 @@ void ProgressListener::run()
         }
     }
     if (!_wait) {
-        _ref.stop();
+        _ref.passiveStop();
     }    
 }
 

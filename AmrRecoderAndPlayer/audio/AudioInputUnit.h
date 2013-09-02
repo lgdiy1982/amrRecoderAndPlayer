@@ -5,6 +5,11 @@
 #include <AudioToolbox/AudioToolbox.h>
 #include <AudioUnit/AudioUnit.h>
 
+struct RecordListener{
+    void* userData;
+    void (*progress)(void* userData, double totalDuration);
+    void (*finish)(void* userData);
+};
 
 class AudioInputUnit 
 {
@@ -15,7 +20,7 @@ public:
     bool cancel();
 
     bool isRunning();
-
+    void setRecordListener(const RecordListener& listener);
 private:
     AudioInputUnit();
     ~AudioInputUnit();
