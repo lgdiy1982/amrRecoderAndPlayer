@@ -66,6 +66,7 @@ void BytesBuffer_context::feed(size_t size, BufferChunkRef cbChunk)
         
         while( size > _feedCapacity && !_eatTerminated) {
             _currentFeedRequestSize = size;
+//            SP::printf("\nwait feeding, eatting %s\n", _eatTerminated ? "terminated" : "not terminated");
             _monitor.wait();
         }
         _currentFeedRequestSize = 0;
@@ -132,7 +133,7 @@ void BytesBuffer_context::eat(size_t size, BufferChunkRef cbChunk)
         if (_eatTerminated)  return;
         while(size > _eatCapacity && !_feedTerminated) {
             _currentEatRequestSize = size;
-            SP::printf("\nwait eating, feeding %s\n", _feedTerminated ? "terminated" : "not terminated");
+//            SP::printf("\nwait eating, feeding %s\n", _feedTerminated ? "terminated" : "not terminated");
             _monitor.wait();
         }
         _currentEatRequestSize = 0;
@@ -211,13 +212,13 @@ void BytesBuffer_context::terminateFeed()
         
         if (_eatTerminated)
         {
-            SP::printf("feeding over\n");
+            //SP::printf("feeding over\n");
             clean();
         }
         else
         {
             _monitor.notify();
-            SP::printf("notify the eatting part, feeding terminated\n");
+            //SP::printf("notify the eatting part, feeding terminated\n");
         }
     }
 }
@@ -231,13 +232,13 @@ void BytesBuffer_context::terminateEat()
         
         if (_feedTerminated)
         {
-            SP::printf("eatting over\n");
+            //SP::printf("eatting over\n");
             clean();
         }
         else
         {
             _monitor.notify();
-            SP::printf("notify the feeding part, eatting terminated\n");
+            //SP::printf("notify the feeding part, eatting terminated\n");
         }
     }
 }

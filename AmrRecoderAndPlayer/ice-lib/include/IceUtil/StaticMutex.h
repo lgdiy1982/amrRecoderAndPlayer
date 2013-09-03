@@ -67,7 +67,7 @@ public:
 #ifdef _WIN32
     ICE_DEPRECATED_API mutable CRITICAL_SECTION* _mutex;
 #else
-    ICE_DEPRECATED_API mutable pthread_mutex_t _mutex;
+    mutable pthread_mutex_t _mutex;
 #endif
 
 

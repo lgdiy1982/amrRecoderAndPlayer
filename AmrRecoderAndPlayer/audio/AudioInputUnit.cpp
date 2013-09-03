@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <CAStreamBasicDescription.h>
 #include <CAXException.h>
-//#include "CAStreamBasicDescription.h"
+#include <HexDump.h>
+#include <interf_dec.h>
 #define kOutputBus 0 /*bus 0 represents a stream to output hardware*/
 #define kInputBus 1  /*bus 1 represents a stream from input hardware*/
 
@@ -48,6 +49,9 @@ private:
     BufferChunk    _cbChunk;
     unsigned char  _armFrame[32];
     FILE *file;
+    
+    void *_amrDecodeState;
+    short _amrDecodeFrame[160];
 };
 
 typedef IceUtil::Handle<EncodeThread> EncodeThreadPtr;
@@ -198,6 +202,9 @@ size_t AudioInputUnit_context::feedCallBackFun(void* userData, const ChunkInfoRe
                           _auUserData.inNumberFrames, /* of frames requested*/
                           _auUserData.ioData );/* Audio Buffer List to hold data*/
 
+//    bytes2HexS((unsigned char*)_auUserData.ioData->mBuffers[0].mData, 320);
+//    SP::printf("\n");
+    
     double expired = 0;
     if(This->_renderstartTimestamp == 0)
         This->_renderstartTimestamp = _auUserData.inTimeStamp->mSampleTime;
@@ -430,7 +437,19 @@ size_t EncodeThread::callBackFun(void* userData, const ChunkInfoRef info,  bool 
     if (info->_size < 160*2) {
         return info->_size;
     }
+#ifdef  DEBUG
+//    SP::printf("-------------------------------------------raw \n");
+//    bytes2HexS((unsigned char*)info->_data, 320);
+//    SP::printf("\n");
+#endif
     int ret = Encoder_Interface_Encode(This->armEncodeState, MR122, (const short*)info->_data, This->_armFrame, 0);
+#ifdef  DEBUG
+//    Decoder_Interface_Decode(This->_amrDecodeState, This->_armFrame, This->_amrDecodeFrame, 1);
+//    SP::printf("-------------------------------------------codec \n");
+//    bytes2HexS((unsigned char*)This->_amrDecodeFrame, 320);
+//    SP::printf("\n");
+#endif
+    
     fwrite(This->_armFrame, sizeof(unsigned char), ret, This->file);
     return  info->_size;
 }
@@ -449,6 +468,9 @@ EncodeThread::EncodeThread(const char* filepath, BytesBufferPtr buffer)
 
 void EncodeThread::run()
 {
+#ifdef DEBUG
+    _amrDecodeState = Decoder_Interface_init();
+#endif
     int dtx = 0;
     armEncodeState = Encoder_Interface_init(dtx);
     file = fopen(_filepath.c_str(), "wb+");
@@ -457,7 +479,9 @@ void EncodeThread::run()
         _buffer->eat(160*2, &_cbChunk);
     } while (!_destroy && !_cancel);
     //Encoder_Interface_exit(&armEncodeState);
-    
+#ifdef DEBUG
+    Decoder_Interface_exit(_amrDecodeState);
+#endif
     fclose(file);
     if (_cancel) {
         ::remove(_filepath.c_str());

@@ -59,8 +59,8 @@ SP_context::SP_context()
 
 SP_context::~SP_context()
 {
-    Monitor<Mutex>::Lock lock(_monitor);
-    _waitforFinished = true;
+    waitforFinished();
+    getThreadControl().join();
 }
 
 void SP_context::printf(const char* format, ...)
@@ -128,6 +128,7 @@ void SP_context::waitforFinished()
     Monitor<Mutex>::Lock lock(_monitor);
     _waitforFinished = true;
     if (_l.empty()) _monitor.notify();
+    
 }
 
 

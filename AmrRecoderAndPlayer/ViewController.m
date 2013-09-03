@@ -43,8 +43,8 @@
 }
 
 - (IBAction)play:(id)sender {
-    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-    //NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
+   // NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
+    NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
 //    NSLog(@"%@", path);
     [[AmrFilePlayer sharedInstance] startPlayWithFilePath:path];
 }

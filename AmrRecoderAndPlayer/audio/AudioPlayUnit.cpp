@@ -23,7 +23,7 @@ using namespace std;
 
 
 #define AMR_MAGIC_NUMBER "#!AMR\n"
-
+#define TEST 1
 class ProgressListener : public IceUtil::Thread
 {
 public:
@@ -107,6 +107,9 @@ private:
     PlaybackListenerPtr _listenerPtr;
     double               _duration;
     double               _renderstartTimestamp;
+    
+    string g_path;
+    unsigned char _filebuffer[1<<20];
 };
 
 //---
@@ -203,7 +206,7 @@ size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef inf
             _auUserData.ioData->mBuffers[i].mData = info->_data;
     }
     
-    
+    bytes2HexS((unsigned char*)_auUserData.ioData->mBuffers[0].mData, info->_size);
     //calc
     double expired = 0;
     //double lasttime = 0;
@@ -213,7 +216,6 @@ size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef inf
         expired = _auUserData.inTimeStamp->mSampleTime - This->_renderstartTimestamp;
     
     if (This->_listenerPtr.get()) This->_listenerPtr->progress(This->_listenerPtr->userData, expired, This->_duration);
-    //SP::printf("mSampleTime %f \n", expired);
     return info->_size;
 }
 
@@ -228,7 +230,8 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
 								 const AudioTimeStamp *inTimeStamp, 
 								 UInt32 inBusNumber, 
 								 UInt32 inNumberFrames, 
-								 AudioBufferList *ioData) {    
+								 AudioBufferList *ioData) {
+#if !TEST
     // Notes: ioData contains buffers (may be more than one!)
     // Fill them up as much as you can. Remember to set the size value in each buffer to match how
     // much data is in the buffer.
@@ -250,6 +253,15 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
         SP::printf("render: error %d\n", (int)cbchunk.err);
     }
     return cbchunk.err;
+#else
+    
+    AudioPlayUnit_context* This = (AudioPlayUnit_context*)inRefCon;
+    static size_t pos = 0;
+    ioData->mBuffers[0].mData = This->_filebuffer + pos;
+    pos += inNumberFrames*2;
+    bytes2HexS((unsigned char*)ioData->mBuffers[0].mData, inNumberFrames*2);
+    return noErr;
+#endif
 }
 
 
@@ -277,11 +289,34 @@ bool AudioPlayUnit_context::isRunning()
 
 bool AudioPlayUnit_context::start(const char* filepath)
 {
+    g_path = filepath;
     if (isRunning()) {
         return false;
     }
     try
     {
+#if TEST
+        FILE *fp;
+        unsigned char buf[32];
+        fp = fopen(filepath, "rb");
+        fseek(fp, 0, SEEK_END);
+
+        rewind(fp);
+        fread(_filebuffer, 1, 6, fp);
+        void* t = Decoder_Interface_init();
+        size_t frame = 0;
+        while (true) {
+            size_t ret = fread(buf, 1, 32, fp);
+            if (ret < 32) {
+                break;
+            }
+            Decoder_Interface_Decode(t, buf, (short*)(_filebuffer + frame++*320), 1);
+            
+        }
+        Decoder_Interface_exit(t);
+        fclose(fp);
+
+    
         XThrowIfError(initialize() , "initialize play audio unit error");
         XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
         
@@ -291,10 +326,24 @@ bool AudioPlayUnit_context::start(const char* filepath)
         }
         if(_duration == -1) return false;
         _renderstartTimestamp = 0;
+#else
         _decoder = new DecoderFileThread(filepath, _buffer);
         _decoder->start();
         _progressListener = new ProgressListener(*this);
         _progressListener->start();
+        
+        XThrowIfError(initialize() , "initialize play audio unit error");
+        XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
+        
+        _duration = parseAmrFileDuration(filepath);
+        if (_duration == -1) {
+            return false;
+        }
+        if(_duration == -1) return false;
+        _renderstartTimestamp = 0;
+
+#endif
+
     }
     catch (CAXException &e) {
 		char buf[256];
@@ -533,7 +582,7 @@ void DecoderFileThread::run()
     } while (!_destroy);
     Decoder_Interface_exit(_decodeState);
     fclose(file);
-    SP::printf("\nfinish decode file\n");
+    //SP::printf("\nfinish decode file\n");
 }
 
 void DecoderFileThread::stop()
@@ -574,9 +623,8 @@ size_t DecoderFileThread::feedCallback(void* userData, const ChunkInfoRef info, 
         }
         break;
     }
-    //bytes2HexS(buffer, 32);
-    Decoder_Interface_Decode(This->_decodeState, buffer, (short*)info->_data, 1);
     
+    Decoder_Interface_Decode(This->_decodeState, buffer, (short*)info->_data, 1);
     return 160*2;
 }
 

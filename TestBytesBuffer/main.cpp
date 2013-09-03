@@ -18,7 +18,7 @@ using namespace std;
 
 
 //--------------------------------------------------------------------------------------------
-SPPtr g_printer;
+
 
 BytesBufferPtr bufferPtr;
 
@@ -32,7 +32,7 @@ public:
         if (feedTerminated && info->_data == 0)
         {
             thiz->_destroy = true;
-            g_printer->printf("<<<<<--------XXXXXXXXXXX\n");
+            SP::printf("<<<<<--------XXXXXXXXXXX\n");
             return 0;
         }
         size_t ret = ::fwrite(info->_data, sizeof(unsigned char), info->_size, thiz->fo);
@@ -57,7 +57,7 @@ public:
     {
         fo = ::fopen(_path.c_str(), "wb+");
         do {
-            bufferPtr->eat(100, &chunk);
+            bufferPtr->eat(rand()%100, &chunk);
         }while (!_destroy);
         fclose(fo);
     }
@@ -82,12 +82,12 @@ public:
         //g_printer->printf("--------------->>>>>:%d\n", count);
         if (ret < info->_size ) {
             bufferPtr->terminatedFeed();
-            g_printer->printf("------------>>>>>XXXXXXXXX\n");
+            SP::printf("------------>>>>>XXXXXXXXX\n");
             thiz->_destroy = true;
         }
         if (EatTerminated) {
             thiz->_destroy = true;
-            g_printer->printf(">>>>>XXXXXXXXX\n");
+            SP::printf(">>>>>XXXXXXXXX\n");
         }
         return  ret;
     }
@@ -102,7 +102,7 @@ public:
     {
         fi = ::fopen(_path.c_str(), "rb+");
         do {
-            bufferPtr->feed(100, &chunk);
+            bufferPtr->feed(rand()%100, &chunk);
         }while (!_destroy);
         fclose(fi);
     }
@@ -116,19 +116,16 @@ typedef Handle<FeedThread> FeedThreadPtr;
 
 int main(int argc, const char * argv[])
 {
-    g_printer = new SP();
-    g_printer->start();
-    bufferPtr = new BytesBuffer((2<<10)-48);
+    bufferPtr = new BytesBuffer(rand()%(2 << 8) + 2<<8);
     //read
-    FeedThreadPtr feeder = new FeedThread("aaaa.png");
+    FeedThreadPtr feeder = new FeedThread("YellowSquare.png");
     EatThreadPtr eatter = new EatThread("copy.png");
     feeder->start();
     eatter->start();
     feeder->getThreadControl().join();
     eatter->getThreadControl().join();
-    g_printer->printf("done\n");
-    //terminalptr->destroy();
-    g_printer->getThreadControl().join();
+    SP::printf("done\n");
+    //SP::waitForCompleted();
     return 0;
 }
 

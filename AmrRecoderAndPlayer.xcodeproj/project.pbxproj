@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4D06514717D5BC1D0048AC90 /* 1.txt in Resources */ = {isa = PBXBuildFile; fileRef = 4D06514617D5BC1D0048AC90 /* 1.txt */; };
 		4D129F8117C8929F00BAE372 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D129F8017C8929F00BAE372 /* UIKit.framework */; };
 		4D129F8317C8929F00BAE372 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D129F8217C8929F00BAE372 /* Foundation.framework */; };
 		4D129F8517C8929F00BAE372 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D129F8417C8929F00BAE372 /* CoreGraphics.framework */; };
@@ -108,6 +109,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4D06514617D5BC1D0048AC90 /* 1.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 1.txt; sourceTree = "<group>"; };
 		4D129F7D17C8929F00BAE372 /* AmrRecoderAndPlayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AmrRecoderAndPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D129F8017C8929F00BAE372 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		4D129F8217C8929F00BAE372 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -267,6 +269,7 @@
 		4D129F7417C8929F00BAE372 = {
 			isa = PBXGroup;
 			children = (
+				4D06514617D5BC1D0048AC90 /* 1.txt */,
 				4DA8B13417D2EC1F0077F40C /* raw_amr.amr */,
 				4D96599717CDEF3F003188ED /* PublicUtility */,
 				4DF0B6D417CAEE3100C4E02E /* amr */,
@@ -619,6 +622,7 @@
 				4D129F9D17C892A000BAE372 /* ViewController.xib in Resources */,
 				4D96582E17CDE45E003188ED /* readme.txt in Resources */,
 				4DA8B13517D2EC1F0077F40C /* raw_amr.amr in Resources */,
+				4D06514717D5BC1D0048AC90 /* 1.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
