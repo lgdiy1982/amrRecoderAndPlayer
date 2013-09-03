@@ -43,8 +43,8 @@
 }
 
 - (IBAction)play:(id)sender {
-   // NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-    NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
+    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
+//    NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
 //    NSLog(@"%@", path);
     [[AmrFilePlayer sharedInstance] startPlayWithFilePath:path];
 }
@@ -57,18 +57,6 @@
 
 
 - (IBAction)startRecord:(id)sender {
-//    [self.recodeButton setTitle:@"停止" forState:UIControlStateNormal];
-//    CFUUIDRef uuidObject = CFUUIDCreate(kCFAllocatorDefault);
-//    NSString *uuidStr = (__bridge_transfer NSString *)CFUUIDCreateString(kCFAllocatorDefault, uuidObject);
-//    CFRelease(uuidObject);
-    
-    
-//    NSArray *paths=NSSearchPathForDirectoriesInDomains(NSDocumentDirectory
-//                                                       , NSUserDomainMask
-//                                                       , YES);
-//    
-//    NSString *fileName=[[paths objectAtIndex:0] stringByAppendingPathComponent:uuidStr];
-
     NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
     NSLog(@"%@", fileName);
     [[AmrFileRecoder sharedInstance] startRecordWithFilePath:fileName];
@@ -100,7 +88,7 @@
 
 - (void) playbackFinished
 {
-    NSLog(@"playbackFinished");
+//    NSLog(@"playbackFinished");
 }
 
 

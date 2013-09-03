@@ -472,6 +472,7 @@ private:
     size_t _ringBufferCount;
     size_t _bufCapacity;
     size_t _lastlimitCapacity;
+
 //    size_t _totalFree;
 //    size_t _waittingSize;
 };

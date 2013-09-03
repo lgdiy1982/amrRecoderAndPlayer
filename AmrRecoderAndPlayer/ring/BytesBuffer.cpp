@@ -36,11 +36,13 @@ private:
     size_t _eatCapacity;
     Monitor<RecMutex> _monitor;
     unsigned char* _buffer;
-    
+    unsigned char* _eatSwapBuffer;
+    unsigned char* _feedSwapBuffer;
     bool _feedTerminated;
     bool _eatTerminated;
     size_t _currentFeedRequestSize;
     size_t _currentEatRequestSize;
+
 };
 
 BytesBuffer_context::BytesBuffer_context(size_t bufferSize) :
@@ -55,6 +57,8 @@ _feedTerminated(false),
 _eatTerminated(false)
 {
     _buffer = (unsigned char*)malloc(bufferSize);
+    _eatSwapBuffer = (unsigned char*)malloc(bufferSize);
+    _feedSwapBuffer = (unsigned char*)malloc(bufferSize);
     bzero(_buffer, bufferSize);
 }
 
@@ -84,27 +88,34 @@ void BytesBuffer_context::feed(size_t size, BufferChunkRef cbChunk)
         truncatedSize = _totalBufferSize - _feedBeginIndex;
     }
     
-    if (truncated) {        
-        cbChunk->_data = (unsigned char*)malloc(size);
-        cbChunk->_size = size;
-        //give out  the continious buffer
-        size = cbChunk->_callback(cbChunk->_userData, cbChunk, _eatTerminated);
-        //refill
-        if (size <= truncatedSize) {
-            memcpy(_buffer+_feedBeginIndex, cbChunk->_data, size);
-        }        
-        else  {
-            memcpy(_buffer+_feedBeginIndex, cbChunk->_data, truncatedSize);
-            memcpy(_buffer, cbChunk->_data+truncatedSize, size-truncatedSize);
-        }
-        free(cbChunk->_data);
-    }
+    cbChunk->_size = size;
+    if (truncated)
+        cbChunk->_data = _feedSwapBuffer;
     else
-    {
-        cbChunk->_data = _buffer+_feedBeginIndex;
-        cbChunk->_size = size;
-        size = cbChunk->_callback(cbChunk->_userData, cbChunk, _eatTerminated);
+        cbChunk->_data = _buffer + _feedBeginIndex;
+    
+    //if (truncated)  SP::printf("\n>>>>>>>>>>>>>>>>>>>>feed truncated (start: %u, size: %u, t: %u \n", _feedBeginIndex, size, truncatedSize);
+
+    
+    //shit out the continious buffer
+    size_t realSize = cbChunk->_callback(cbChunk->_userData, cbChunk, _eatTerminated);
+    
+    if (truncated) {
+        if (realSize <= truncated) {
+            memcpy(_buffer+_feedBeginIndex, cbChunk->_data, realSize);
+        }
+        else {
+            memcpy(_buffer+_feedBeginIndex, cbChunk->_data, truncatedSize);
+            memcpy(_buffer, cbChunk->_data + truncatedSize, realSize - truncatedSize);
+        }
     }
+    else {
+        memcpy(_buffer+_feedBeginIndex, cbChunk->_data, realSize);
+    }
+    
+    size = realSize;
+    
+    
     
     {
         Monitor<RecMutex>::Lock lock(_monitor);
@@ -133,7 +144,7 @@ void BytesBuffer_context::eat(size_t size, BufferChunkRef cbChunk)
         if (_eatTerminated)  return;
         while(size > _eatCapacity && !_feedTerminated) {
             _currentEatRequestSize = size;
-//            SP::printf("\nwait eating, feeding %s\n", _feedTerminated ? "terminated" : "not terminated");
+            //SP::printf("\nwait eating, feeding %s\n", _feedTerminated ? "terminated" : "not terminated");
             _monitor.wait();
         }
         _currentEatRequestSize = 0;
@@ -141,7 +152,6 @@ void BytesBuffer_context::eat(size_t size, BufferChunkRef cbChunk)
     //terminated
     size = size > _eatCapacity ? _eatCapacity : size;
 
-    
     
     bool truncated = false;
     size_t truncatedSize = 0;
@@ -151,23 +161,20 @@ void BytesBuffer_context::eat(size_t size, BufferChunkRef cbChunk)
         truncatedSize = _totalBufferSize - _eatBeginIndex ;
     }
     
+    cbChunk->_size = size;
     if (truncated) {
-        cbChunk->_data = (unsigned char*)malloc(size);
-        cbChunk->_size = size;
-        //SP::printf("eat size %u\n", size);
+        cbChunk->_data = _eatSwapBuffer;
         memcpy(cbChunk->_data, _buffer+_eatBeginIndex, truncatedSize);
         memcpy(cbChunk->_data + truncatedSize, _buffer, size-truncatedSize);
-        size = cbChunk->_callback(cbChunk->_userData, cbChunk, _feedTerminated);
-        free(cbChunk->_data);
-        //g_printer->printf("eat truncatedSize %d", truncatedSize);
     }
     else
     {
         cbChunk->_data = _buffer+_eatBeginIndex;
-        cbChunk->_size = size;
-        //SP::printf("eat size %u\n", size);
-        size = cbChunk->_callback(cbChunk->_userData, cbChunk, _feedTerminated);
     }
+    //if (truncated)  SP::printf("\n<<<<<<<<<<<<<<<<<eat truncated (start: %u, size: %u, t: %u \n", _eatBeginIndex, size, truncatedSize);
+    //shit out the continious buffer, the size may be changed
+    size = cbChunk->_callback(cbChunk->_userData, cbChunk, _feedTerminated);    
+    
 
     
     {
@@ -200,7 +207,7 @@ void BytesBuffer_context::clean()
 
     _feedTerminated = false;
     _eatTerminated = false;
-    SP::printf("-------------clean\n");
+    //SP::printf("-------------clean\n");
 }
 
 void BytesBuffer_context::terminateFeed()
@@ -252,6 +259,8 @@ bool BytesBuffer_context::empty()
 BytesBuffer_context::~BytesBuffer_context()
 {
     free(_buffer);
+    free(_eatSwapBuffer);
+    free(_feedSwapBuffer);
 }
 
 

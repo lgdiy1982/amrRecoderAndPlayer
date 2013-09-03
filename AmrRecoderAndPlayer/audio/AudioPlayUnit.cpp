@@ -23,7 +23,7 @@ using namespace std;
 
 
 #define AMR_MAGIC_NUMBER "#!AMR\n"
-#define TEST 1
+#define TEST 0
 class ProgressListener : public IceUtil::Thread
 {
 public:
@@ -107,7 +107,8 @@ private:
     PlaybackListenerPtr _listenerPtr;
     double               _duration;
     double               _renderstartTimestamp;
-    
+
+
     string g_path;
     unsigned char _filebuffer[1<<20];
 };
@@ -132,7 +133,7 @@ AudioPlayUnit_context::~AudioPlayUnit_context()
 
 OSStatus AudioPlayUnit_context::setupBuffers()
 {
-    _buffer = new BytesBuffer(2<<12);
+    _buffer = new BytesBuffer(2<<10);
     return noErr;
 }
 
@@ -197,16 +198,16 @@ size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef inf
         return 0;
     }
 
-    _auUserData.ioData->mNumberBuffers = This->_audioFormat.mChannelsPerFrame;     //noninterleved
+//    _auUserData.ioData->mNumberBuffers = This->_audioFormat.mChannelsPerFrame;     //noninterleved
+//    
+//    for (size_t i = 0; i < _auUserData.ioData->mNumberBuffers; ++i) {   //channels
+//        if (_auUserData.ioData->mBuffers[i].mData)     //alloc enabled
+//            memcpy(_auUserData.ioData->mBuffers[i].mData, info->_data, _auUserData.ioData->mBuffers[i].mDataByteSize);
+//        else
+            _auUserData.ioData->mBuffers[0].mData = info->_data;
+//    }
     
-    for (size_t i = 0; i < _auUserData.ioData->mNumberBuffers; ++i) {   //channels
-        if (_auUserData.ioData->mBuffers[i].mData)     //alloc enabled
-            memcpy(_auUserData.ioData->mBuffers[i].mData, info->_data, _auUserData.ioData->mBuffers[i].mDataByteSize);
-        else
-            _auUserData.ioData->mBuffers[i].mData = info->_data;
-    }
-    
-    bytes2HexS((unsigned char*)_auUserData.ioData->mBuffers[0].mData, info->_size);
+//    bytes2HexS((unsigned char*)_auUserData.ioData->mBuffers[0].mData, info->_size);
     //calc
     double expired = 0;
     //double lasttime = 0;
@@ -249,17 +250,14 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
     chunk._callback = AudioPlayUnit_context::eatCallback;
     chunk._userData = &cbchunk;
     This->_buffer->eat(inNumberFrames*This->_audioFormat.mBytesPerFrame, &chunk);
-    if (cbchunk.err) {
-        SP::printf("render: error %d\n", (int)cbchunk.err);
-    }
-    return cbchunk.err;
+    return noErr;
 #else
     
     AudioPlayUnit_context* This = (AudioPlayUnit_context*)inRefCon;
     static size_t pos = 0;
     ioData->mBuffers[0].mData = This->_filebuffer + pos;
     pos += inNumberFrames*2;
-    bytes2HexS((unsigned char*)ioData->mBuffers[0].mData, inNumberFrames*2);
+    //bytes2HexS((unsigned char*)ioData->mBuffers[0].mData, inNumberFrames*2);
     return noErr;
 #endif
 }
@@ -329,6 +327,7 @@ bool AudioPlayUnit_context::start(const char* filepath)
 #else
         _decoder = new DecoderFileThread(filepath, _buffer);
         _decoder->start();
+
         _progressListener = new ProgressListener(*this);
         _progressListener->start();
         

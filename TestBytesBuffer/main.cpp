@@ -118,7 +118,7 @@ int main(int argc, const char * argv[])
 {
     bufferPtr = new BytesBuffer(rand()%(2 << 8) + 2<<8);
     //read
-    FeedThreadPtr feeder = new FeedThread("YellowSquare.png");
+    FeedThreadPtr feeder = new FeedThread("aaaa.png");
     EatThreadPtr eatter = new EatThread("copy.png");
     feeder->start();
     eatter->start();

@@ -437,19 +437,7 @@ size_t EncodeThread::callBackFun(void* userData, const ChunkInfoRef info,  bool 
     if (info->_size < 160*2) {
         return info->_size;
     }
-#ifdef  DEBUG
-//    SP::printf("-------------------------------------------raw \n");
-//    bytes2HexS((unsigned char*)info->_data, 320);
-//    SP::printf("\n");
-#endif
-    int ret = Encoder_Interface_Encode(This->armEncodeState, MR122, (const short*)info->_data, This->_armFrame, 0);
-#ifdef  DEBUG
-//    Decoder_Interface_Decode(This->_amrDecodeState, This->_armFrame, This->_amrDecodeFrame, 1);
-//    SP::printf("-------------------------------------------codec \n");
-//    bytes2HexS((unsigned char*)This->_amrDecodeFrame, 320);
-//    SP::printf("\n");
-#endif
-    
+    int ret = Encoder_Interface_Encode(This->armEncodeState, MR122, (const short*)info->_data, This->_armFrame, 0);    
     fwrite(This->_armFrame, sizeof(unsigned char), ret, This->file);
     return  info->_size;
 }
