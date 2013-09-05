@@ -125,7 +125,7 @@ int main(int argc, const char * argv[])
     feeder->getThreadControl().join();
     eatter->getThreadControl().join();
     SP::printf("done\n");
-    //SP::waitForCompleted();
+    //SP::waitForComplete();
     return 0;
 }
 
