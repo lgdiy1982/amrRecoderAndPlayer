@@ -1,6 +1,6 @@
 #include "AudioPlayUnit.h"
 
-#import <AudioToolbox/AudioToolbox.h>
+#include <AudioToolbox/AudioToolbox.h>
 #include <IceUtil/Time.h>
 #include <BytesBuffer.h>
 #include <CAStreamBasicDescription.h>
@@ -30,6 +30,7 @@ public:
     ProgressListener(class AudioPlayUnit_context& ref);
     virtual void run();
     void reachEnd();
+    void destroy();
 private:
     Monitor<Mutex> _monitor;
     bool _wait;
@@ -47,14 +48,14 @@ public:
     static size_t feedCallback(void* userData, const ChunkInfoRef,  bool terminated);
     virtual void run();
     void stop();
-private: 
+private:
     string filepath;
     BytesBufferPtr _buffer;
     bool _destroy;
     FILE *file;
     BufferChunk    _cbChunk;
     void*          _decodeState;
-
+    
 };
 
 typedef IceUtil::Handle<DecoderFileThread> DecoderFileThreadPtr;
@@ -74,7 +75,7 @@ public:
     ~AudioPlayUnit_context();
     
     int initialize();
-
+    
     bool start(const char* filepath);
     bool stop();
     bool passiveStop();
@@ -87,12 +88,12 @@ public:
      speakers. If you don't have any, just don't write anything in the buffers
      */
     static OSStatus playbackCallback(void *inRefCon,
-                                     AudioUnitRenderActionFlags *ioActionFlags, 
-                                     const AudioTimeStamp *inTimeStamp, 
-                                     UInt32 inBusNumber, 
-                                     UInt32 inNumberFrames, 
-                                     AudioBufferList *ioData);     
-
+                                     AudioUnitRenderActionFlags *ioActionFlags,
+                                     const AudioTimeStamp *inTimeStamp,
+                                     UInt32 inBusNumber,
+                                     UInt32 inNumberFrames,
+                                     AudioBufferList *ioData);
+    
 private:
     OSStatus setupBuffers();
 private:
@@ -105,17 +106,17 @@ private:
     ProgressListenerPtr _progressListener;
     Mutex               _mutex;
     PlaybackListenerPtr _listenerPtr;
-    double               _duration;
+    
     double               _renderstartTimestamp;
-
-
+    
+    
     string g_path;
     unsigned char _filebuffer[1<<20];
 };
 
 //---
 
-static float parseAmrFileDuration(const string& filepath);
+int parseAmrFileDuration(const char* filepath);
 //------------------------------------------------------------------------------------------------------------------
 
 AudioPlayUnit_context::AudioPlayUnit_context()
@@ -193,30 +194,22 @@ size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef inf
 {
     RenderChunk& _auUserData = (RenderChunk &)*userData;
     AudioPlayUnit_context* This = (AudioPlayUnit_context*)_auUserData.inRefCon;
-    if (terminated && info->_data == 0) {        
+    if (terminated && info->_data == 0) {
         This->notifyEnd();
         return 0;
     }
-
-//    _auUserData.ioData->mNumberBuffers = This->_audioFormat.mChannelsPerFrame;     //noninterleved
-//    
-//    for (size_t i = 0; i < _auUserData.ioData->mNumberBuffers; ++i) {   //channels
-//        if (_auUserData.ioData->mBuffers[i].mData)     //alloc enabled
-//            memcpy(_auUserData.ioData->mBuffers[i].mData, info->_data, _auUserData.ioData->mBuffers[i].mDataByteSize);
-//        else
-            _auUserData.ioData->mBuffers[0].mData = info->_data;
-//    }
     
-//    bytes2HexS((unsigned char*)_auUserData.ioData->mBuffers[0].mData, info->_size);
+    //    _auUserData.ioData->mNumberBuffers = This->_audioFormat.mChannelsPerFrame;     //noninterleved
+    //
+    //    for (size_t i = 0; i < _auUserData.ioData->mNumberBuffers; ++i) {   //channels
+    //        if (_auUserData.ioData->mBuffers[i].mData)     //alloc enabled
+    //            memcpy(_auUserData.ioData->mBuffers[i].mData, info->_data, _auUserData.ioData->mBuffers[i].mDataByteSize);
+    //        else
+    _auUserData.ioData->mBuffers[0].mData = info->_data;
+    //    }
+    
+    //    bytes2HexS((unsigned char*)_auUserData.ioData->mBuffers[0].mData, info->_size);
     //calc
-    double expired = 0;
-    //double lasttime = 0;
-    if(This->_renderstartTimestamp == 0)
-        This->_renderstartTimestamp = _auUserData.inTimeStamp->mSampleTime;
-    else
-        expired = _auUserData.inTimeStamp->mSampleTime - This->_renderstartTimestamp;
-    
-    if (This->_listenerPtr.get()) This->_listenerPtr->progress(This->_listenerPtr->userData, expired, This->_duration);
     return info->_size;
 }
 
@@ -226,17 +219,18 @@ size_t AudioPlayUnit_context::eatCallback(void* userData, const ChunkInfoRef inf
  */
 
 
-OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon, 
-								 AudioUnitRenderActionFlags *ioActionFlags, 
-								 const AudioTimeStamp *inTimeStamp, 
-								 UInt32 inBusNumber, 
-								 UInt32 inNumberFrames, 
-								 AudioBufferList *ioData) {
+OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
+                                                 AudioUnitRenderActionFlags *ioActionFlags,
+                                                 const AudioTimeStamp *inTimeStamp,
+                                                 UInt32 inBusNumber,
+                                                 UInt32 inNumberFrames,
+                                                 AudioBufferList *ioData) {
 #if !TEST
     // Notes: ioData contains buffers (may be more than one!)
     // Fill them up as much as you can. Remember to set the size value in each buffer to match how
     // much data is in the buffer.
     AudioPlayUnit_context* This = (AudioPlayUnit_context*)inRefCon;
+    
     
     RenderChunk cbchunk = {0};
     cbchunk.inRefCon = This;
@@ -250,6 +244,18 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
     chunk._callback = AudioPlayUnit_context::eatCallback;
     chunk._userData = &cbchunk;
     This->_buffer->eat(inNumberFrames*This->_audioFormat.mBytesPerFrame, &chunk);
+    
+    static size_t expired = 0;
+    static IceUtil::Time lasttime;
+    if(This->_renderstartTimestamp == 0)
+    {
+        This->_renderstartTimestamp = IceUtil::Time::now().toMilliSeconds();
+        expired = 0;
+    }
+    else
+        expired = IceUtil::Time::now().toMilliSeconds() - This->_renderstartTimestamp;
+    
+    if (This->_listenerPtr.get()) This->_listenerPtr->progress(This->_listenerPtr->userData, expired);
     return noErr;
 #else
     
@@ -265,10 +271,10 @@ OSStatus AudioPlayUnit_context::playbackCallback(void *inRefCon,
 
 
 bool AudioPlayUnit_context::isRunning()
-{	
+{
 	OSStatus err = noErr;
 	UInt32 auhalRunning = 0, size = 0;
-
+    
 	size = sizeof(auhalRunning);
 	if(_audioUnit)
 	{
@@ -298,7 +304,7 @@ bool AudioPlayUnit_context::start(const char* filepath)
         unsigned char buf[32];
         fp = fopen(filepath, "rb");
         fseek(fp, 0, SEEK_END);
-
+        
         rewind(fp);
         fread(_filebuffer, 1, 6, fp);
         void* t = Decoder_Interface_init();
@@ -313,36 +319,31 @@ bool AudioPlayUnit_context::start(const char* filepath)
         }
         Decoder_Interface_exit(t);
         fclose(fp);
-
-    
+        
+        
+        if(parseAmrFileDuration(filepath) <= 0) return false;
+        _renderstartTimestamp = 0;
+        
+        
         XThrowIfError(initialize() , "initialize play audio unit error");
         XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
         
-        _duration = parseAmrFileDuration(filepath);
-        if (_duration == -1) {
-            return false;
-        }
-        if(_duration == -1) return false;
-        _renderstartTimestamp = 0;
+        
 #else
         _decoder = new DecoderFileThread(filepath, _buffer);
         _decoder->start();
-
+        
         _progressListener = new ProgressListener(*this);
         _progressListener->start();
         
+        if(parseAmrFileDuration(filepath) <= 0) return false;
+        _renderstartTimestamp = 0;
+        
+        
         XThrowIfError(initialize() , "initialize play audio unit error");
         XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
-        
-        _duration = parseAmrFileDuration(filepath);
-        if (_duration == -1) {
-            return false;
-        }
-        if(_duration == -1) return false;
-        _renderstartTimestamp = 0;
-
 #endif
-
+        
     }
     catch (CAXException &e) {
 		char buf[256];
@@ -353,7 +354,7 @@ bool AudioPlayUnit_context::start(const char* filepath)
 		fprintf(stderr, "An unknown error occurred\n");
 		return false;
 	}
-
+    
     return  true;
 }
 
@@ -378,8 +379,10 @@ bool AudioPlayUnit_context::stop()
             _decoder->stop();
             _decoder->getThreadControl().join();
         }
+        _progressListener->destroy();
+        _progressListener->getThreadControl().join();
         _buffer->terminatedFeed();      //terminate feeding last
-        if (_listenerPtr.get()) _listenerPtr->finish(_listenerPtr->userData);
+        //if (_listenerPtr.get()) _listenerPtr->finish(_listenerPtr->userData);
     }
     catch (CAXException &e) {
 		char buf[256];
@@ -391,7 +394,7 @@ bool AudioPlayUnit_context::stop()
 		fprintf(stderr, "An unknown error occurred\n");
 		return false;
 	}
-
+    
     return  true;
 }
 
@@ -413,7 +416,7 @@ bool AudioPlayUnit_context::passiveStop()
         if (_decoder.get() != NULL && _decoder->isAlive()) {
             _decoder->stop();
             _decoder->getThreadControl().join();
-        }         
+        }
         if (_listenerPtr.get()) _listenerPtr->finish(_listenerPtr->userData);
     }
     catch (CAXException &e) {
@@ -428,7 +431,7 @@ bool AudioPlayUnit_context::passiveStop()
 	}
     
     return  true;
-
+    
 }
 
 
@@ -507,7 +510,7 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
         XThrowIfError(AudioUnitSetProperty(audioUnit, kAudioUnitProperty_ShouldAllocateBuffer, kAudioUnitScope_Input, kOutputBus, &flag, sizeof(flag)), "Could not disable buffer allocation for the player");
         // Initialise
         XThrowIfError(AudioUnitInitialize(audioUnit), "could not init audio unit");
-
+        
     }
     catch (CAXException &e) {
 		char buf[256];
@@ -529,13 +532,14 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
 
 
 //amr 11.20
- float parseAmrFileDuration(const string& filepath)
+int parseAmrFileDuration(const char* filepath)
 {
     char buffer[32];
     size_t ret = 0;
-    FILE* fp = fopen(filepath.c_str(), "rb");
+    FILE* fp = fopen(filepath, "rb");
     if (!fp) return -1;
-        
+    
+    double duration = 0;
     
     ret = fread(buffer, 1, 6, fp);
     if (ret == 0)  return -1;
@@ -544,15 +548,22 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
         return -1;
     }
     //verify bitrate
-    ret = fread(buffer, 1, 1, fp);
-    if (ret == 0)   return -1;
-    if (7 != (buffer[0] & 0x78) >> 3  )
-        return -1;
-    fseek(fp, -1L, SEEK_END);
-    size_t sz = ftell(fp);
-    float duration = round(sz/320.f + 0.5);
+    while (true) {
+        ret = fread(buffer, 1, 1, fp);
+        if (ret == 0) {
+            break;
+        }
+        if (7 == (buffer[0] & 0x78) >> 3  )
+            continue;
+        duration += 0.02;
+        //skip 31 bytes
+        ret = fread(buffer, 1, 31, fp) ;
+        if (ret < 31) {
+            break;
+        }
+    }
     fclose(fp);
-    return duration;
+    return round(duration+0.5);
 }
 
 
@@ -642,6 +653,13 @@ void ProgressListener::reachEnd()
 {
     Monitor<Mutex>::Lock lock(_monitor);
     _wait = false;
+    _monitor.notify();
+}
+
+void ProgressListener::destroy()
+{
+    Monitor<Mutex>::Lock lock(_monitor);
+    _destroy = true;
     _monitor.notify();
 }
 

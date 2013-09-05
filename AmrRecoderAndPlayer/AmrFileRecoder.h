@@ -11,7 +11,7 @@
 @protocol RecodeDelegate
 @optional
 - (void) recordProgress:(double) acumulateDuration;;
-- (void) recordFinished;
+- (void) recordFinished:(double) duration;
 - (void) updateMeter:(double) meter;
 @end
 

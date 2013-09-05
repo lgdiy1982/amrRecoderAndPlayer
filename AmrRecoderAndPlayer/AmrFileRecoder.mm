@@ -23,7 +23,7 @@
 
 static AmrFileRecoder* instance = nil;
 static void progress(void* userData, double acumulateDuration);
-static void finished(void* userData);
+static void finished(void* userData, double duration);
 
 @implementation AmrFileRecoder
 + (id) sharedInstance{
@@ -36,7 +36,7 @@ static void finished(void* userData);
 - (id) init
 {
     if ((self = [super init]) != nil) {
-        _listener.userData = self;
+        _listener.userData = (__bridge void*)self;
         _listener.progress = progress;
         _listener.finish = finished;
         AudioInputUnit::instance().setRecordListener(_listener);
@@ -60,10 +60,6 @@ static void finished(void* userData);
     return AudioInputUnit::instance().cancel();
 }
 
-- (void) dealloc
-{
-    [super dealloc];
-}
 
 - (void) progress:(double) acumulateDuration
 {
@@ -73,28 +69,28 @@ static void finished(void* userData);
     }
 }
 
-- (void) finished
+- (void) finished:(double) duration
 {
     if(self.delegate)
     {
-        [self.delegate recordFinished];
+        [self.delegate recordFinished:duration];
     }
 }
 @end
 
 void progress(void* userData, double acumulateDuration)
 {
-    AmrFileRecoder* This = (AmrFileRecoder*)userData;
+    AmrFileRecoder* This = (__bridge AmrFileRecoder*)userData;
     dispatch_async(dispatch_get_main_queue(), ^{
         [This progress:acumulateDuration];
     });
 }
 
-void finished(void* userData)
+void finished(void* userData, double duration)
 {
-    AmrFileRecoder* This = (AmrFileRecoder*)userData;
+    AmrFileRecoder* This = (__bridge AmrFileRecoder*)userData;
     dispatch_async(dispatch_get_main_queue(), ^{
-        [This finished];
+        [This finished:duration];
     });
 }
 

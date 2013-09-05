@@ -10,9 +10,14 @@
 
 @protocol PlaybackDelegate
 @optional
-- (void) playbackProgress:(double) expired totalDuration:(double) duration;
+- (void) playbackProgress:(double) expired ;
 - (void) playbackFinished;
 @end
+
+#ifdef __cplusplus
+extern "C"
+#endif
+int ParseAmrFileDuration(NSString * url);
 
 @interface AmrFilePlayer : NSObject
 @property (assign, nonatomic) id<PlaybackDelegate> delegate;
@@ -21,5 +26,5 @@
 + (id) sharedInstance;
 - (Boolean) startPlayWithFilePath : (NSString*) filepath;
 - (Boolean) stopPlayback;
-
+- (Boolean) isRunning;
 @end

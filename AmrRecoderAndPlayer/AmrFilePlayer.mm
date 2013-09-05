@@ -20,7 +20,7 @@
 
 @end
 
-static void progress(void* userData, double expired, double duration);
+static void progress(void* userData, double expired);
 static void finished(void* userData);
 
 
@@ -37,7 +37,7 @@ static AmrFilePlayer* instance;
 - (id) init
 {
     if( (self = [super init ]) != nil) {
-
+        
     }
     return self;
 }
@@ -54,14 +54,20 @@ static AmrFilePlayer* instance;
 
 - (Boolean) stopPlayback
 {
-     return AudioPlayUnit::instance().stopPlay() ;
+    return AudioPlayUnit::instance().stopPlay() ;
 }
-     
-- (void) progress:(double) expired  totalDuration:(double) duration
+
+- (Boolean) isRunning
+{
+    return  AudioPlayUnit::instance().isRunning();
+}
+
+
+- (void) progress:(double) expired
 {
     
     if (self.delegate) {
-        [self.delegate playbackProgress:expired totalDuration:duration];
+        [self.delegate playbackProgress:expired];
     }
 }
 
@@ -74,11 +80,11 @@ static AmrFilePlayer* instance;
 @end
 
 
-void progress(void* userData, double expired, double duration)
+void progress(void* userData, double expired)
 {
     AmrFilePlayer* This = (__bridge AmrFilePlayer*)userData;
     dispatch_async(dispatch_get_main_queue(), ^{
-        [This progress:expired totalDuration:duration];
+        [This progress:expired];
     });
 }
 
@@ -88,4 +94,9 @@ void finished(void* userData)
     dispatch_async(dispatch_get_main_queue(), ^{
         [This finished];
     });
+}
+
+int ParseAmrFileDuration(NSString * url)
+{
+    return parseAmrFileDuration([url UTF8String]);
 }

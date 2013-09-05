@@ -81,7 +81,7 @@
     [super viewDidUnload];
 }
 
-- (void) playbackProgress:(double) expired totalDuration:(double) duration
+- (void) playbackProgress:(double) expired
 {
 //    NSLog(@"playbackProgress %f %f", expired, duration);
 }
@@ -97,7 +97,7 @@
 //    NSLog(@"recordProgress %f", acumulateDuration);
 }
 
-- (void) recordFinished
+- (void) recordFinished:(double) duration
 {
     NSLog(@"recordFinished");
 }

@@ -6,9 +6,14 @@
 
 struct PlaybackListener{
     void* userData;
-    void (*progress)(void* userData, double currentTimeStamp, double totalDuration);
+    void (*progress)(void* userData, double expired);
     void (*finish)(void* userData);
 };
+
+#ifdef __cplusplus
+extern "C"
+#endif
+int parseAmrFileDuration(const char* filepath);
 
 class AudioPlayUnit
 {
@@ -25,4 +30,4 @@ private:
     std::auto_ptr<class AudioPlayUnit_context> _ctx;
 };
 
-#endif 
+#endif
