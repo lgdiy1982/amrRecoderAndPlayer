@@ -42,7 +42,7 @@ private:
     bool _eatTerminated;
     size_t _currentFeedRequestSize;
     size_t _currentEatRequestSize;
-
+    
 };
 
 BytesBuffer_context::BytesBuffer_context(size_t bufferSize) :
@@ -70,7 +70,7 @@ void BytesBuffer_context::feed(size_t size, BufferChunkRef cbChunk)
         
         while( size > _feedCapacity && !_eatTerminated) {
             _currentFeedRequestSize = size;
-//            SP::printf("\nwait feeding, eatting %s\n", _eatTerminated ? "terminated" : "not terminated");
+            //            SP::printf("\nwait feeding, eatting %s\n", _eatTerminated ? "terminated" : "not terminated");
             _monitor.wait();
         }
         _currentFeedRequestSize = 0;
@@ -78,10 +78,10 @@ void BytesBuffer_context::feed(size_t size, BufferChunkRef cbChunk)
     
     //if _eatTerminated is true; size > _feedCapacity
     size = size > _feedCapacity ? _feedCapacity : size;
-
+    
     bool truncated = false;
     size_t truncatedSize = 0;
-
+    
     //at this moment , _feedCapacity maybe increased, but do not disturb the result;
     if (_totalBufferSize < _feedBeginIndex + size) {
         truncated = true;
@@ -95,7 +95,7 @@ void BytesBuffer_context::feed(size_t size, BufferChunkRef cbChunk)
         cbChunk->_data = _buffer + _feedBeginIndex;
     
     //if (truncated)  SP::printf("\n>>>>>>>>>>>>>>>>>>>>feed truncated (start: %u, size: %u, t: %u \n", _feedBeginIndex, size, truncatedSize);
-
+    
     
     //shit out the continious buffer
     size_t realSize = cbChunk->_callback(cbChunk->_userData, cbChunk, _eatTerminated);
@@ -151,7 +151,7 @@ void BytesBuffer_context::eat(size_t size, BufferChunkRef cbChunk)
     }
     //terminated
     size = size > _eatCapacity ? _eatCapacity : size;
-
+    
     
     bool truncated = false;
     size_t truncatedSize = 0;
@@ -173,9 +173,9 @@ void BytesBuffer_context::eat(size_t size, BufferChunkRef cbChunk)
     }
     //if (truncated)  SP::printf("\n<<<<<<<<<<<<<<<<<eat truncated (start: %u, size: %u, t: %u \n", _eatBeginIndex, size, truncatedSize);
     //shit out the continious buffer, the size may be changed
-    size = cbChunk->_callback(cbChunk->_userData, cbChunk, _feedTerminated);    
+    size = cbChunk->_callback(cbChunk->_userData, cbChunk, _feedTerminated);
     
-
+    
     
     {
         Monitor<RecMutex>::Lock lock(_monitor);
@@ -204,7 +204,7 @@ void BytesBuffer_context::clean()
     
     _eatBeginIndex = 0;
     _eatCapacity = 0;
-
+    
     _feedTerminated = false;
     _eatTerminated = false;
     //SP::printf("-------------clean\n");
