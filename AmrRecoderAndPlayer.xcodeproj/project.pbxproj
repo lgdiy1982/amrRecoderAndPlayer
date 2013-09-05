@@ -221,8 +221,6 @@
 		4DF0B72817CAEE3200C4E02E /* UUID.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UUID.cpp; sourceTree = "<group>"; };
 		4DF0B72A17CAEE3200C4E02E /* ReStartableThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReStartableThread.cpp; sourceTree = "<group>"; };
 		4DF0B72B17CAEE3200C4E02E /* ReStartableThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReStartableThread.h; sourceTree = "<group>"; };
-		4DF0B72C17CAEE3200C4E02E /* RingBufferA.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RingBufferA.cpp; sourceTree = "<group>"; };
-		4DF0B72D17CAEE3200C4E02E /* RingBufferA.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RingBufferA.h; sourceTree = "<group>"; };
 		4DF0B74D17CAEF7000C4E02E /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		4DF0B74F17CAEF7800C4E02E /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		4DF0B75117CAEFAA00C4E02E /* libbz2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbz2.dylib; path = usr/lib/libbz2.dylib; sourceTree = SDKROOT; };
@@ -525,8 +523,6 @@
 			children = (
 				4DF0B72A17CAEE3200C4E02E /* ReStartableThread.cpp */,
 				4DF0B72B17CAEE3200C4E02E /* ReStartableThread.h */,
-				4DF0B72C17CAEE3200C4E02E /* RingBufferA.cpp */,
-				4DF0B72D17CAEE3200C4E02E /* RingBufferA.h */,
 				4D9918E617CB6060004179E8 /* BytesBuffer.cpp */,
 				4D9918E717CB6060004179E8 /* BytesBuffer.h */,
 				4D9BABE017CC98B80000F5B3 /* SP.cpp */,
