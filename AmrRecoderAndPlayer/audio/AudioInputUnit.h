@@ -17,7 +17,12 @@ extern "C"
     };
 #ifdef __cplusplus
 } //end extern "C"
+
+
+
 #endif
+
+
 
 
 class AudioInputUnit

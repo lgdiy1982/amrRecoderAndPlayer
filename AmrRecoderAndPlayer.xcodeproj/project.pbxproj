@@ -20,6 +20,7 @@
 		4D129F9D17C892A000BAE372 /* ViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4D129F9B17C892A000BAE372 /* ViewController.xib */; };
 		4D129FA517C8937000BAE372 /* AmrFileRecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D129FA417C8937000BAE372 /* AmrFileRecoder.mm */; };
 		4D129FA817C8939200BAE372 /* AmrFilePlayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D129FA717C8939200BAE372 /* AmrFilePlayer.mm */; };
+		4D8E484217D99DF700CB179B /* Utility.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D8E484117D99DF700CB179B /* Utility.m */; };
 		4D96582E17CDE45E003188ED /* readme.txt in Resources */ = {isa = PBXBuildFile; fileRef = 4D96582D17CDE45E003188ED /* readme.txt */; };
 		4D9658EF17CDEE83003188ED /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B75517CAEFE900C4E02E /* AudioToolbox.framework */; };
 		4D96599F17CDEF3F003188ED /* CADebugMacros.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D96599817CDEF3F003188ED /* CADebugMacros.cpp */; };
@@ -88,7 +89,6 @@
 		4DF0B72F17CAEE3200C4E02E /* libopencore-amrnb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B6DF17CAEE3100C4E02E /* libopencore-amrnb.a */; };
 		4DF0B73017CAEE3200C4E02E /* libopencore-amrwb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B6E017CAEE3100C4E02E /* libopencore-amrwb.a */; };
 		4DF0B73117CAEE3200C4E02E /* AudioInputUnit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B6E217CAEE3100C4E02E /* AudioInputUnit.cpp */; };
-		4DF0B73217CAEE3200C4E02E /* AudioIOunit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B6E417CAEE3100C4E02E /* AudioIOunit.cpp */; };
 		4DF0B73317CAEE3200C4E02E /* AudioPlayUnit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B6E617CAEE3100C4E02E /* AudioPlayUnit.cpp */; };
 		4DF0B73417CAEE3200C4E02E /* ArgVector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71217CAEE3100C4E02E /* ArgVector.cpp */; };
 		4DF0B73517CAEE3200C4E02E /* Cond.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4DF0B71317CAEE3100C4E02E /* Cond.cpp */; };
@@ -155,6 +155,8 @@
 		4D129FA417C8937000BAE372 /* AmrFileRecoder.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AmrFileRecoder.mm; sourceTree = "<group>"; };
 		4D129FA617C8939200BAE372 /* AmrFilePlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AmrFilePlayer.h; sourceTree = "<group>"; };
 		4D129FA717C8939200BAE372 /* AmrFilePlayer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AmrFilePlayer.mm; sourceTree = "<group>"; };
+		4D8E484017D99DF700CB179B /* Utility.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Utility.h; sourceTree = "<group>"; };
+		4D8E484117D99DF700CB179B /* Utility.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Utility.m; sourceTree = "<group>"; };
 		4D96582D17CDE45E003188ED /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
 		4D96599817CDEF3F003188ED /* CADebugMacros.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CADebugMacros.cpp; sourceTree = "<group>"; };
 		4D96599917CDEF3F003188ED /* CADebugMacros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CADebugMacros.h; sourceTree = "<group>"; };
@@ -239,8 +241,6 @@
 		4DF0B6E017CAEE3100C4E02E /* libopencore-amrwb.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libopencore-amrwb.a"; sourceTree = "<group>"; };
 		4DF0B6E217CAEE3100C4E02E /* AudioInputUnit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudioInputUnit.cpp; sourceTree = "<group>"; };
 		4DF0B6E317CAEE3100C4E02E /* AudioInputUnit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioInputUnit.h; sourceTree = "<group>"; };
-		4DF0B6E417CAEE3100C4E02E /* AudioIOunit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudioIOunit.cpp; sourceTree = "<group>"; };
-		4DF0B6E517CAEE3100C4E02E /* AudioIOunit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioIOunit.h; sourceTree = "<group>"; };
 		4DF0B6E617CAEE3100C4E02E /* AudioPlayUnit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudioPlayUnit.cpp; sourceTree = "<group>"; };
 		4DF0B6E717CAEE3100C4E02E /* AudioPlayUnit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioPlayUnit.h; sourceTree = "<group>"; };
 		4DF0B6EB17CAEE3100C4E02E /* AbstractMutex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AbstractMutex.h; sourceTree = "<group>"; };
@@ -351,6 +351,7 @@
 		4D129F7417C8929F00BAE372 = {
 			isa = PBXGroup;
 			children = (
+				4D8E483F17D99D5400CB179B /* FileCache */,
 				4DC0568617D8813900B3A3A7 /* ASIUploadDownload */,
 				4DA8B13417D2EC1F0077F40C /* raw_amr.amr */,
 				4D96599717CDEF3F003188ED /* PublicUtility */,
@@ -425,6 +426,15 @@
 				4D129F9617C892A000BAE372 /* Default-568h@2x.png */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		4D8E483F17D99D5400CB179B /* FileCache */ = {
+			isa = PBXGroup;
+			children = (
+				4D8E484017D99DF700CB179B /* Utility.h */,
+				4D8E484117D99DF700CB179B /* Utility.m */,
+			);
+			path = FileCache;
 			sourceTree = "<group>";
 		};
 		4D96599717CDEF3F003188ED /* PublicUtility */ = {
@@ -609,8 +619,6 @@
 			children = (
 				4DF0B6E217CAEE3100C4E02E /* AudioInputUnit.cpp */,
 				4DF0B6E317CAEE3100C4E02E /* AudioInputUnit.h */,
-				4DF0B6E417CAEE3100C4E02E /* AudioIOunit.cpp */,
-				4DF0B6E517CAEE3100C4E02E /* AudioIOunit.h */,
 				4DF0B6E617CAEE3100C4E02E /* AudioPlayUnit.cpp */,
 				4DF0B6E717CAEE3100C4E02E /* AudioPlayUnit.h */,
 				4D96582D17CDE45E003188ED /* readme.txt */,
@@ -828,7 +836,6 @@
 				4D129FA517C8937000BAE372 /* AmrFileRecoder.mm in Sources */,
 				4D129FA817C8939200BAE372 /* AmrFilePlayer.mm in Sources */,
 				4DF0B73117CAEE3200C4E02E /* AudioInputUnit.cpp in Sources */,
-				4DF0B73217CAEE3200C4E02E /* AudioIOunit.cpp in Sources */,
 				4DF0B73317CAEE3200C4E02E /* AudioPlayUnit.cpp in Sources */,
 				4DF0B73417CAEE3200C4E02E /* ArgVector.cpp in Sources */,
 				4DF0B73517CAEE3200C4E02E /* Cond.cpp in Sources */,
@@ -882,6 +889,7 @@
 				4DC056F417D8813900B3A3A7 /* ASIS3Request.m in Sources */,
 				4DC056F517D8813900B3A3A7 /* ASIS3ServiceRequest.m in Sources */,
 				4DC0570617D8813900B3A3A7 /* Reachability.m in Sources */,
+				4D8E484217D99DF700CB179B /* Utility.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

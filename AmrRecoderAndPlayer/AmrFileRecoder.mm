@@ -94,3 +94,22 @@ void finished(void* userData, double duration)
     });
 }
 
+
+
+
+void inflateAmrFile(char* filepath, size_t limit)
+{
+    unsigned char replicate[32];
+    FILE *fp = fopen(filepath, "wb+");
+    //fseek(fp, 6, SEEK_SET);
+    fread(replicate, 1, 6, fp);
+    fread(replicate, 1, 32, fp);
+//    rewind(fp);
+    fseek(fp, 0L, SEEK_END);
+    long size = 0;
+    while (size < limit) {
+        fwrite(replicate, 1, 32, fp);
+        size+=32;
+    }
+    fclose(fp);
+}

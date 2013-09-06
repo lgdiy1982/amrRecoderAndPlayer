@@ -108,9 +108,6 @@ private:
     PlaybackListenerPtr _listenerPtr;
     
     double               _renderstartTimestamp;
-    
-    
-    string g_path;
     unsigned char _filebuffer[1<<20];
 };
 
@@ -293,7 +290,6 @@ bool AudioPlayUnit_context::isRunning()
 
 bool AudioPlayUnit_context::start(const char* filepath)
 {
-    g_path = filepath;
     if (isRunning()) {
         return false;
     }
@@ -336,7 +332,7 @@ bool AudioPlayUnit_context::start(const char* filepath)
         _progressListener = new ProgressListener(*this);
         _progressListener->start();
         
-        if(parseAmrFileDuration(filepath) <= 0) return false;
+        //if(parseAmrFileDuration(filepath) <= 0) return false;
         _renderstartTimestamp = 0;
         
         

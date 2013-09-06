@@ -7,7 +7,9 @@
 //
 
 #import <Foundation/Foundation.h>
-
+#ifdef __cplusplus
+extern "C" void inflateAmrFile(char* filepath, size_t limit);
+#endif
 @protocol RecodeDelegate
 @optional
 - (void) recordProgress:(double) acumulateDuration;;

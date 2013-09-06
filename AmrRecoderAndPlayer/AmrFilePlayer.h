@@ -10,6 +10,7 @@
 
 @protocol PlaybackDelegate
 @optional
+- (void) playbackStart;
 - (void) playbackProgress:(double) expired ;
 - (void) playbackFinished;
 @end
@@ -25,6 +26,25 @@ int ParseAmrFileDuration(NSString * url);
 
 + (id) sharedInstance;
 - (Boolean) startPlayWithFilePath : (NSString*) filepath;
+
+//if playback is running, you should stop first, twice playback on same url is noeffect
+- (void) startPlayWithUrl:(NSString* ) url;
+- (void) stopAll;
 - (Boolean) stopPlayback;
 - (Boolean) isRunning;
 @end
+
+
+/*
+@protocol RemotePlaybackDelegate
+- (void) playbackStart;
+- (void) playbackProgress:(double) expired;
+- (void) playbackFishished;
+@end
+
+@interface RemoteAMRFilePlayer : NSObject
++ (id) sharedInstance;
+- (void) startPlayWithUrl:(NSString* ) url;
+- (void) stopPlayback;
+@end
+*/
