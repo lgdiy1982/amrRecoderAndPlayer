@@ -53,7 +53,7 @@
              @"http://192.168.0.105/6a4f5248b4f3f2cf6fd1d2e7059962ab",
              @"http://192.168.0.105/9c1cd9e6642e7ab0fd154546ecf5c324",
              @"http://192.168.0.105/bbd3cbe17a49355d3b5c850944f88977",
-             @"http://192.168.0.105/1ab9f6b01159201b76aeabcc440cc15e",
+             @"http://192.168.0.105/8d093acab1b70ba97cf2b43c13143912",
              nil];
 }
 
@@ -99,7 +99,7 @@
     NSUInteger index = [amrPlayerButtons indexOfObject:sender];
 
     if ([@"play" isEqualToString:((UIButton*)sender).titleLabel.text ]) {
-        [[AmrFilePlayer sharedInstance] startPlayWithUrl:[_urls objectAtIndex:index]];
+        [[AmrFilePlayer sharedInstance] startPlayWithUrl:[_urls objectAtIndex:index] progressDelegate: [amrDownloadProgressbars objectAtIndex:index]];
     }
     else if ([@"stop" isEqualToString:((UIButton*)sender).titleLabel.text]) {
         [[AmrFilePlayer sharedInstance] stopAll];
@@ -138,7 +138,7 @@
 {
 //    NSLog(@"recordFinished");
     NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-    inflateAmrFile( [fileName UTF8String], 2<<21);
+    inflateAmrFile( [fileName UTF8String], 1<<23);
     [self upload];
 }
 
@@ -156,7 +156,8 @@
 //	[request setUploadProgressDelegate:progressIndicator];
 	[request setDelegate:self];
 	[request setDidFailSelector:@selector(uploadFailed:)];
-	[request setDidFinishSelector:@selector(uploadFinished:)];
+	[request setDidFinishSelector:@selector(uploadFinished:)]
+    ;
     
     NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
     [request setFile:path forKey:[NSString stringWithFormat:@"test"]];

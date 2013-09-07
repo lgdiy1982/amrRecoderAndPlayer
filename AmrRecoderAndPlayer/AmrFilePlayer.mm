@@ -9,7 +9,7 @@
 #import "AmrFilePlayer.h"
 #include "audio/AudioPlayUnit.h"
 #import "ASIHTTPRequest.h"
-
+#import "ASIProgressDelegate.h"
 enum PlayStatus {
     downloadOnly,
     downlaodThenPlay,
@@ -100,7 +100,7 @@ static AmrFilePlayer* instance;
 
 //
 
-- (void) startPlayWithUrl:(NSString* ) url
+- (void) startPlayWithUrl:(NSString* ) url progressDelegate:(ASIProgressDelegate *) downloadDelegate
 {
     if ([self isRunning] && [_currentPlayingURL isEqualToString:url]) {
         return;
@@ -139,6 +139,7 @@ static AmrFilePlayer* instance;
             [request setDelegate:self];
             [request setDidFinishSelector:@selector(fileFetchComplete:)];
             [request setDidFailSelector:@selector(fileFetchFailed:)];
+            [request setDownloadProgressDelegate:downloadDelegate];
             ctx.request = request;
             ctx._state = downlaodThenPlay;
             [_requestQueue setObject:ctx forKey:url];
