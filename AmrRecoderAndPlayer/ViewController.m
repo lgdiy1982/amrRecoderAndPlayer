@@ -12,16 +12,17 @@
 #import "AmrFileRecoder.h"
 
 #import "ASIFormDataRequest.h"
+#import "FileFetcher.h"
+#import "MultiAmrFilesPlayer.h"
 
-
-
-@interface ViewController () <UITableViewDataSource, UITableViewDelegate, PlaybackDelegate, RecodeDelegate>
+@interface ViewController () <UITableViewDataSource, UITableViewDelegate, PlaybackDelegate, RecodeDelegate, MultiPlaybackDelegate>
 {
     ASIFormDataRequest *request;
     IBOutletCollection(UIButton) NSArray *amrPlayerButtons;
     IBOutletCollection(UIProgressView) NSArray *amrDownloadProgressbars;
     NSArray *_urls;
     NSInteger _curIndex;
+    FileFetcher *_fetcher;
 }
 
 @property (weak, nonatomic) IBOutlet UIButton *playButton;
@@ -48,13 +49,18 @@
 	// Do any additional setup after loading the view, typically from a nib.
     ((AmrFilePlayer*)[AmrFilePlayer sharedInstance]).delegate = self;
     ((AmrFileRecoder*)[AmrFileRecoder sharedInstance]).delegate = self;
+    
+    ((MultiAmrFilesPlayer*)[MultiAmrFilesPlayer sharedInstance]).delegate = self;
     _urls = [NSArray arrayWithObjects:
-             @"http://192.168.0.105/539b5eccd21f1d342476dad63e406964",
-             @"http://192.168.0.105/6a4f5248b4f3f2cf6fd1d2e7059962ab",
-             @"http://192.168.0.105/9c1cd9e6642e7ab0fd154546ecf5c324",
-             @"http://192.168.0.105/bbd3cbe17a49355d3b5c850944f88977",
-             @"http://192.168.0.105/8d093acab1b70ba97cf2b43c13143912",
+             @"http://192.168.0.105/b40323a90283ac05e9f1cf1bb06cf8e3",
+             @"http://192.168.0.105/1d386476fe79b13e55210b3b26c2c0ee",
+             @"http://192.168.0.105/e144fe0e81c4214de2e46bb80976ab6a",
+             @"http://192.168.0.105/ebe7527c1e72d4b25af0c13739ac6a42",
+             @"http://192.168.0.105/4f07845466c1eaf0adce0ff6347ae380",
+
              nil];
+    
+//    _fetcher = [[FileFetcher alloc] initWithRoot:NSTemporaryDirectory() MemoryCapacity:0 DiskCapacity:0];
 }
 
 - (void)didReceiveMemoryWarning
@@ -97,12 +103,13 @@
 
 - (IBAction)togglePlay:(id)sender {
     NSUInteger index = [amrPlayerButtons indexOfObject:sender];
-
+    //NSUInteger index = ((UIButton*)sender).tag;
+//    NSLog(@"%@", ((UIButton*)sender).titleLabel.text);
     if ([@"play" isEqualToString:((UIButton*)sender).titleLabel.text ]) {
-        [[AmrFilePlayer sharedInstance] startPlayWithUrl:[_urls objectAtIndex:index] progressDelegate: [amrDownloadProgressbars objectAtIndex:index]];
+        [[MultiAmrFilesPlayer sharedInstance] startPlayWithURL: [NSURL URLWithString: [_urls objectAtIndex:index]] ];
     }
     else if ([@"stop" isEqualToString:((UIButton*)sender).titleLabel.text]) {
-        [[AmrFilePlayer sharedInstance] stopAll];
+        [[MultiAmrFilesPlayer sharedInstance] stopAll];
     }
 }
 
@@ -138,7 +145,7 @@
 {
 //    NSLog(@"recordFinished");
     NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-    inflateAmrFile( [fileName UTF8String], 1<<23);
+    inflateAmrFile( [fileName UTF8String], 1<<22);
     [self upload];
 }
 
@@ -146,14 +153,10 @@
 - (void) upload
 {
     request = [ASIFormDataRequest requestWithURL:[NSURL URLWithString:@"http://192.168.0.105/index.php"] ];
-//  [request setPostValue:@"test" forKey:@"value1"];
-//	[request setPostValue:@"test" forKey:@"value2"];
-//	[request setPostValue:@"test" forKey:@"value3"];
     request.delegate = self;
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_4_0
 	[request setShouldContinueWhenAppEntersBackground:YES];
 #endif
-//	[request setUploadProgressDelegate:progressIndicator];
 	[request setDelegate:self];
 	[request setDidFailSelector:@selector(uploadFailed:)];
 	[request setDidFinishSelector:@selector(uploadFinished:)]
@@ -186,4 +189,22 @@
     
 }
 //- ()
+
+#pragma -mark mult player delegate
+- (void) multiPlaybackStart:(NSURL*) url
+{
+    NSUInteger index = [_urls indexOfObject:[url absoluteString]];
+    [[amrPlayerButtons objectAtIndex:index] setTitle:@"stop" forState:UIControlStateNormal];
+}
+
+- (void) multiPlaybackProgress:(NSURL*) url Expired:(double) expired
+{
+    
+}
+
+- (void) multiPlaybackFinished:(NSURL*) url
+{
+    NSUInteger index = [_urls indexOfObject:[url absoluteString]];
+    [[amrPlayerButtons objectAtIndex:index] setTitle:@"play" forState:UIControlStateNormal];
+}
 @end

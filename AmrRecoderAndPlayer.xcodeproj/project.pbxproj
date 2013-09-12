@@ -20,7 +20,6 @@
 		4D129F9D17C892A000BAE372 /* ViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4D129F9B17C892A000BAE372 /* ViewController.xib */; };
 		4D129FA517C8937000BAE372 /* AmrFileRecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D129FA417C8937000BAE372 /* AmrFileRecoder.mm */; };
 		4D129FA817C8939200BAE372 /* AmrFilePlayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D129FA717C8939200BAE372 /* AmrFilePlayer.mm */; };
-		4D8E484217D99DF700CB179B /* Utility.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D8E484117D99DF700CB179B /* Utility.m */; };
 		4D96582E17CDE45E003188ED /* readme.txt in Resources */ = {isa = PBXBuildFile; fileRef = 4D96582D17CDE45E003188ED /* readme.txt */; };
 		4D9658EF17CDEE83003188ED /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF0B75517CAEFE900C4E02E /* AudioToolbox.framework */; };
 		4D96599F17CDEF3F003188ED /* CADebugMacros.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D96599817CDEF3F003188ED /* CADebugMacros.cpp */; };
@@ -63,6 +62,10 @@
 		4DA317B117D891FB0051C55F /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DA317B017D891FB0051C55F /* libxml2.dylib */; };
 		4DA317B317D8AB840051C55F /* GHUnitIOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DA317B217D8AB840051C55F /* GHUnitIOS.framework */; };
 		4DA8B13517D2EC1F0077F40C /* raw_amr.amr in Resources */ = {isa = PBXBuildFile; fileRef = 4DA8B13417D2EC1F0077F40C /* raw_amr.amr */; };
+		4DA9495817DD7342002B3A7B /* NSString+MD5.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DA9495717DD7342002B3A7B /* NSString+MD5.m */; };
+		4DA9495B17DDAF4E002B3A7B /* MultiAmrFilesPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DA9495A17DDAF4E002B3A7B /* MultiAmrFilesPlayer.m */; };
+		4DA9495E17DE0543002B3A7B /* DiskLruCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DA9495D17DE0543002B3A7B /* DiskLruCache.m */; };
+		4DAB464917DC5AF200EE4BFC /* FileFetcher.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4DAB464817DC5AF200EE4BFC /* FileFetcher.mm */; };
 		4DC056E017D8813900B3A3A7 /* ASIAuthenticationDialog.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DC0568917D8813900B3A3A7 /* ASIAuthenticationDialog.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4DC056E117D8813900B3A3A7 /* ASIDataCompressor.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DC0568C17D8813900B3A3A7 /* ASIDataCompressor.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4DC056E217D8813900B3A3A7 /* ASIDataDecompressor.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DC0568E17D8813900B3A3A7 /* ASIDataDecompressor.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
@@ -155,8 +158,6 @@
 		4D129FA417C8937000BAE372 /* AmrFileRecoder.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AmrFileRecoder.mm; sourceTree = "<group>"; };
 		4D129FA617C8939200BAE372 /* AmrFilePlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AmrFilePlayer.h; sourceTree = "<group>"; };
 		4D129FA717C8939200BAE372 /* AmrFilePlayer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AmrFilePlayer.mm; sourceTree = "<group>"; };
-		4D8E484017D99DF700CB179B /* Utility.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Utility.h; sourceTree = "<group>"; };
-		4D8E484117D99DF700CB179B /* Utility.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Utility.m; sourceTree = "<group>"; };
 		4D96582D17CDE45E003188ED /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
 		4D96599817CDEF3F003188ED /* CADebugMacros.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CADebugMacros.cpp; sourceTree = "<group>"; };
 		4D96599917CDEF3F003188ED /* CADebugMacros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CADebugMacros.h; sourceTree = "<group>"; };
@@ -182,6 +183,14 @@
 		4DA317B017D891FB0051C55F /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
 		4DA317B217D8AB840051C55F /* GHUnitIOS.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = GHUnitIOS.framework; sourceTree = "<group>"; };
 		4DA8B13417D2EC1F0077F40C /* raw_amr.amr */ = {isa = PBXFileReference; lastKnownFileType = file; path = raw_amr.amr; sourceTree = "<group>"; };
+		4DA9495617DD7342002B3A7B /* NSString+MD5.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+MD5.h"; sourceTree = "<group>"; };
+		4DA9495717DD7342002B3A7B /* NSString+MD5.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+MD5.m"; sourceTree = "<group>"; };
+		4DA9495917DDAF4E002B3A7B /* MultiAmrFilesPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MultiAmrFilesPlayer.h; sourceTree = "<group>"; };
+		4DA9495A17DDAF4E002B3A7B /* MultiAmrFilesPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MultiAmrFilesPlayer.m; sourceTree = "<group>"; };
+		4DA9495C17DE0543002B3A7B /* DiskLruCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DiskLruCache.h; sourceTree = "<group>"; };
+		4DA9495D17DE0543002B3A7B /* DiskLruCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DiskLruCache.m; sourceTree = "<group>"; };
+		4DAB464717DC5AF200EE4BFC /* FileFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileFetcher.h; sourceTree = "<group>"; };
+		4DAB464817DC5AF200EE4BFC /* FileFetcher.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FileFetcher.mm; sourceTree = "<group>"; };
 		4DC0568817D8813900B3A3A7 /* ASIAuthenticationDialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ASIAuthenticationDialog.h; sourceTree = "<group>"; };
 		4DC0568917D8813900B3A3A7 /* ASIAuthenticationDialog.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ASIAuthenticationDialog.m; sourceTree = "<group>"; };
 		4DC0568A17D8813900B3A3A7 /* ASICacheDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ASICacheDelegate.h; sourceTree = "<group>"; };
@@ -351,7 +360,7 @@
 		4D129F7417C8929F00BAE372 = {
 			isa = PBXGroup;
 			children = (
-				4D8E483F17D99D5400CB179B /* FileCache */,
+				4DAB464617DC5A7A00EE4BFC /* FileCache */,
 				4DC0568617D8813900B3A3A7 /* ASIUploadDownload */,
 				4DA8B13417D2EC1F0077F40C /* raw_amr.amr */,
 				4D96599717CDEF3F003188ED /* PublicUtility */,
@@ -400,6 +409,8 @@
 		4D129F8617C8929F00BAE372 /* AmrRecoderAndPlayer */ = {
 			isa = PBXGroup;
 			children = (
+				4DA9495917DDAF4E002B3A7B /* MultiAmrFilesPlayer.h */,
+				4DA9495A17DDAF4E002B3A7B /* MultiAmrFilesPlayer.m */,
 				4D129FA617C8939200BAE372 /* AmrFilePlayer.h */,
 				4D129FA717C8939200BAE372 /* AmrFilePlayer.mm */,
 				4D129FA317C8937000BAE372 /* AmrFileRecoder.h */,
@@ -428,15 +439,6 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		4D8E483F17D99D5400CB179B /* FileCache */ = {
-			isa = PBXGroup;
-			children = (
-				4D8E484017D99DF700CB179B /* Utility.h */,
-				4D8E484117D99DF700CB179B /* Utility.m */,
-			);
-			path = FileCache;
-			sourceTree = "<group>";
-		};
 		4D96599717CDEF3F003188ED /* PublicUtility */ = {
 			isa = PBXGroup;
 			children = (
@@ -460,6 +462,19 @@
 				4D9BABC317CC3DB00000F5B3 /* TestBytesBuffer.1 */,
 			);
 			path = TestBytesBuffer;
+			sourceTree = "<group>";
+		};
+		4DAB464617DC5A7A00EE4BFC /* FileCache */ = {
+			isa = PBXGroup;
+			children = (
+				4DA9495617DD7342002B3A7B /* NSString+MD5.h */,
+				4DA9495717DD7342002B3A7B /* NSString+MD5.m */,
+				4DAB464717DC5AF200EE4BFC /* FileFetcher.h */,
+				4DAB464817DC5AF200EE4BFC /* FileFetcher.mm */,
+				4DA9495C17DE0543002B3A7B /* DiskLruCache.h */,
+				4DA9495D17DE0543002B3A7B /* DiskLruCache.m */,
+			);
+			path = FileCache;
 			sourceTree = "<group>";
 		};
 		4DC0568617D8813900B3A3A7 /* ASIUploadDownload */ = {
@@ -889,7 +904,10 @@
 				4DC056F417D8813900B3A3A7 /* ASIS3Request.m in Sources */,
 				4DC056F517D8813900B3A3A7 /* ASIS3ServiceRequest.m in Sources */,
 				4DC0570617D8813900B3A3A7 /* Reachability.m in Sources */,
-				4D8E484217D99DF700CB179B /* Utility.m in Sources */,
+				4DAB464917DC5AF200EE4BFC /* FileFetcher.mm in Sources */,
+				4DA9495817DD7342002B3A7B /* NSString+MD5.m in Sources */,
+				4DA9495B17DDAF4E002B3A7B /* MultiAmrFilesPlayer.m in Sources */,
+				4DA9495E17DE0543002B3A7B /* DiskLruCache.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

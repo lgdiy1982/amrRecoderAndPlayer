@@ -45,6 +45,12 @@ static void rioInterruptionListener(void *inClientData, UInt32 inInterruption)
     }
 }
 
+void uncaughtExceptionHandler(NSException *exception) {
+    NSLog(@"CRASH: %@", exception);
+    NSLog(@"Stack Trace: %@", [exception callStackSymbols]);
+    // Internal error reporting
+}
+
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
@@ -55,7 +61,7 @@ static void rioInterruptionListener(void *inClientData, UInt32 inInterruption)
     self.window.rootViewController = self.viewController;
     [self.window makeKeyAndVisible];    
 
-
+    NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
     
     return YES;
 }

@@ -42,6 +42,7 @@
 						<string key="NSFrame">{{164, 401}, {126, 44}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
 						<reference key="NSWindow"/>
+						<reference key="NSNextKeyView"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<bool key="IBUIOpaque">NO</bool>
 						<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
@@ -146,7 +147,7 @@
 						<string key="NSFrame">{{197, 61}, {73, 44}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
 						<reference key="NSWindow"/>
-						<reference key="NSNextKeyView" ref="431868714"/>
+						<reference key="NSNextKeyView" ref="624607187"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<bool key="IBUIOpaque">NO</bool>
 						<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
@@ -192,7 +193,7 @@
 						<string key="NSFrame">{{116, 145}, {73, 44}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
 						<reference key="NSWindow"/>
-						<reference key="NSNextKeyView" ref="324884839"/>
+						<reference key="NSNextKeyView" ref="917209455"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<bool key="IBUIOpaque">NO</bool>
 						<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
@@ -215,6 +216,7 @@
 						<string key="NSFrame">{{35, 123}, {68, 9}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
 						<reference key="NSWindow"/>
+						<reference key="NSNextKeyView" ref="597043857"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<bool key="IBUIOpaque">NO</bool>
 						<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
@@ -226,6 +228,7 @@
 						<string key="NSFrame">{{120, 123}, {69, 9}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
 						<reference key="NSWindow"/>
+						<reference key="NSNextKeyView" ref="912343939"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<bool key="IBUIOpaque">NO</bool>
 						<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
@@ -237,6 +240,7 @@
 						<string key="NSFrame">{{201, 123}, {65, 9}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
 						<reference key="NSWindow"/>
+						<reference key="NSNextKeyView" ref="431868714"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<bool key="IBUIOpaque">NO</bool>
 						<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
@@ -248,6 +252,7 @@
 						<string key="NSFrame">{{35, 216}, {68, 9}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
 						<reference key="NSWindow"/>
+						<reference key="NSNextKeyView" ref="330586951"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<bool key="IBUIOpaque">NO</bool>
 						<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
@@ -259,6 +264,7 @@
 						<string key="NSFrame">{{120, 216}, {68, 9}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
 						<reference key="NSWindow"/>
+						<reference key="NSNextKeyView" ref="324884839"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<bool key="IBUIOpaque">NO</bool>
 						<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
@@ -638,7 +644,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">90</int>
+			<int key="maxID">91</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">

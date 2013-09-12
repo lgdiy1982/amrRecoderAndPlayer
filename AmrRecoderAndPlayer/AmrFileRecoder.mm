@@ -101,32 +101,16 @@ void finished(void* userData, double duration)
 
 void inflateAmrFile(const char* filepath, size_t limit)
 {
-    unsigned char replicate[32];
     FILE *fp = fopen(filepath, "r+");
     fseek(fp, 0L, SEEK_END);
     long filesize = ftell(fp);
-    SP::printf("filesize %ld", filesize);
+    long dataSize = filesize - 6;
+    unsigned char *duplicate = (unsigned char*)malloc(filesize + (4 - (filesize)%4)  );
     fseek(fp, 6, SEEK_SET);
-    fread(replicate, 1, 32, fp);
-    bytes2HexS(replicate, 32);
-    
-//    rewind(fp);
+    fread(duplicate, 1, dataSize, fp);
+
     fseek(fp, 0L, SEEK_END);
-    printf("-----------%ld\n",ftell(fp));
-    long size = 0;
-    while (size < limit) {
-        fwrite(replicate, 1, 32, fp);
-        size+=32;
-        fseek(fp, 32, SEEK_CUR);                                    
-        //SP::printf("-----------%ld\n",ftell(fp));
-    }
-    printf("-----------%ld\n",ftell(fp));
+    while (ftell(fp) <= limit)  fwrite(duplicate, 1, dataSize, fp);
     fclose(fp);
-    
-//    fp = fopen(filepath, "r");
-//    for (int i = 0; i<  20; ++i) {
-//        fread(replicate, 1, 32, fp);
-//        bytes2HexS(replicate, 32);
-//    }
-//    fclose(fp);
+    free(duplicate);
 }
