@@ -17,7 +17,6 @@ void inflateAmrFile(const char* filepath, size_t limit);
 @optional
 - (void) recordProgress:(double) acumulateDuration;;
 - (void) recordFinished:(double) duration;
-- (void) updateMeter:(double) meter;
 @end
 
 @interface AmrFileRecoder : NSObject

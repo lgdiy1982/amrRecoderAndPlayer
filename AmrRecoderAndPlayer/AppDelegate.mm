@@ -63,6 +63,11 @@ void uncaughtExceptionHandler(NSException *exception) {
 
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
     
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(sensorStateChange:)
+                                                 name:@"UIDeviceProximityStateDidChangeNotification"
+                                               object:nil];
     return YES;
 }
 
@@ -107,7 +112,7 @@ void uncaughtExceptionHandler(NSException *exception) {
         UInt32 doChangeDefaultRoute = 1;
         AudioSessionSetProperty (kAudioSessionProperty_OverrideCategoryDefaultToSpeaker, sizeof (doChangeDefaultRoute), &doChangeDefaultRoute);
         
-        Float32 preferredBufferSize = .02;
+        Float32 preferredBufferSize = .01;
         XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
         
         Float64 hwSampleRate;
@@ -120,6 +125,21 @@ void uncaughtExceptionHandler(NSException *exception) {
         fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
     } catch(...) {
         
+    }
+}
+
+
+-(void)sensorStateChange:(NSNotificationCenter *)notification
+{
+    if ([[UIDevice currentDevice] proximityState] == YES)
+    {
+        NSLog(@"Device is close to user");
+    }
+    else
+    {
+        NSLog(@"Device is not close to user");
+        UInt32 doChangeDefaultRoute = 1;
+        AudioSessionSetProperty (kAudioSessionProperty_OverrideCategoryDefaultToSpeaker, sizeof (doChangeDefaultRoute), &doChangeDefaultRoute);
     }
 }
 

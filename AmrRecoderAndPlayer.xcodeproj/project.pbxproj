@@ -66,6 +66,7 @@
 		4DA9495B17DDAF4E002B3A7B /* MultiAmrFilesPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DA9495A17DDAF4E002B3A7B /* MultiAmrFilesPlayer.m */; };
 		4DA9495E17DE0543002B3A7B /* DiskLruCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DA9495D17DE0543002B3A7B /* DiskLruCache.m */; };
 		4DAB464917DC5AF200EE4BFC /* FileFetcher.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4DAB464817DC5AF200EE4BFC /* FileFetcher.mm */; };
+		4DB0FBA3182CE07C0089EED9 /* POVoiceHUD.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DB0FBA2182CE07C0089EED9 /* POVoiceHUD.m */; };
 		4DC056E017D8813900B3A3A7 /* ASIAuthenticationDialog.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DC0568917D8813900B3A3A7 /* ASIAuthenticationDialog.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4DC056E117D8813900B3A3A7 /* ASIDataCompressor.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DC0568C17D8813900B3A3A7 /* ASIDataCompressor.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		4DC056E217D8813900B3A3A7 /* ASIDataDecompressor.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DC0568E17D8813900B3A3A7 /* ASIDataDecompressor.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
@@ -191,6 +192,8 @@
 		4DA9495D17DE0543002B3A7B /* DiskLruCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DiskLruCache.m; sourceTree = "<group>"; };
 		4DAB464717DC5AF200EE4BFC /* FileFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileFetcher.h; sourceTree = "<group>"; };
 		4DAB464817DC5AF200EE4BFC /* FileFetcher.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FileFetcher.mm; sourceTree = "<group>"; };
+		4DB0FBA1182CE07C0089EED9 /* POVoiceHUD.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = POVoiceHUD.h; sourceTree = "<group>"; };
+		4DB0FBA2182CE07C0089EED9 /* POVoiceHUD.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = POVoiceHUD.m; sourceTree = "<group>"; };
 		4DC0568817D8813900B3A3A7 /* ASIAuthenticationDialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ASIAuthenticationDialog.h; sourceTree = "<group>"; };
 		4DC0568917D8813900B3A3A7 /* ASIAuthenticationDialog.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ASIAuthenticationDialog.m; sourceTree = "<group>"; };
 		4DC0568A17D8813900B3A3A7 /* ASICacheDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ASICacheDelegate.h; sourceTree = "<group>"; };
@@ -409,6 +412,8 @@
 		4D129F8617C8929F00BAE372 /* AmrRecoderAndPlayer */ = {
 			isa = PBXGroup;
 			children = (
+				4DB0FBA1182CE07C0089EED9 /* POVoiceHUD.h */,
+				4DB0FBA2182CE07C0089EED9 /* POVoiceHUD.m */,
 				4DA9495917DDAF4E002B3A7B /* MultiAmrFilesPlayer.h */,
 				4DA9495A17DDAF4E002B3A7B /* MultiAmrFilesPlayer.m */,
 				4D129FA617C8939200BAE372 /* AmrFilePlayer.h */,
@@ -879,6 +884,7 @@
 				4D9BABE217CC98B80000F5B3 /* SP.cpp in Sources */,
 				4D9BABE617CC9EF00000F5B3 /* HexDump.cpp in Sources */,
 				4D96599F17CDEF3F003188ED /* CADebugMacros.cpp in Sources */,
+				4DB0FBA3182CE07C0089EED9 /* POVoiceHUD.m in Sources */,
 				4D9659A017CDEF3F003188ED /* CAStreamBasicDescription.cpp in Sources */,
 				4D9659A117CDEF3F003188ED /* CAXException.cpp in Sources */,
 				4DC056E017D8813900B3A3A7 /* ASIAuthenticationDialog.m in Sources */,
@@ -1048,6 +1054,7 @@
 					"-IPublicUtility",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos6.1;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -1077,6 +1084,7 @@
 					"-IPublicUtility",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos6.1;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;

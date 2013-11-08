@@ -18,9 +18,9 @@
 {
     RecordListener _listener;
     Boolean        _isUpdatingMeter;
-    float          _preUpdatedMeter;
+    float          _sampleMeter;
     float          _currentUpdatingMeter;
-    float          _currentSliceCount;
+    NSUInteger     _currentSliceCount;
 }
 
 @end
@@ -54,8 +54,9 @@ static void updateMeters(void* userData, float average, size_t channel);
 
 - (Boolean) startRecordWithFilePath:(NSString*) filepath
 {
+    _sampleMeter =  -59;
     _currentSliceCount = 0;
-    _currentUpdatingMeter = 0.f;
+    _currentUpdatingMeter = -60.f;
     return AudioInputUnit::instance().start([filepath UTF8String] );
 }
 
@@ -90,19 +91,26 @@ static void updateMeters(void* userData, float average, size_t channel);
 {
     _currentUpdatingMeter = (_currentSliceCount * _currentUpdatingMeter + average) / (_currentSliceCount + 1);
     _currentSliceCount++;
+//    if (_currentSliceCount == 5)
+//    {
+//        _currentSliceCount = 0;
+//        _currentUpdatingMeter = 0;
+//    }
+
 }
 
 
 - (void)  updateMeters
 {
-    _preUpdatedMeter = _currentUpdatingMeter;
+    _sampleMeter = _currentUpdatingMeter;
     _currentSliceCount = 0;
-    _currentUpdatingMeter = 0.f;
+    _currentUpdatingMeter = -59.f;
 }
 
 - (float) averagePowerForChannel:(NSUInteger)channelNumber
 {
-    return _preUpdatedMeter;
+    printf("------ %.5f", _sampleMeter);
+    return 20*log10(_sampleMeter/32767);
 }
 
 @end

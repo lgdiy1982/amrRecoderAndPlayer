@@ -14,7 +14,7 @@
 #import "ASIFormDataRequest.h"
 #import "FileFetcher.h"
 #import "MultiAmrFilesPlayer.h"
-
+#import "POVoiceHUD.h"
 @interface ViewController () <UITableViewDataSource, UITableViewDelegate, PlaybackDelegate, RecodeDelegate, MultiPlaybackDelegate>
 {
     ASIFormDataRequest *request;
@@ -23,6 +23,8 @@
     NSArray *_urls;
     NSInteger _curIndex;
     FileFetcher *_fetcher;
+    
+    POVoiceHUD *_voiceHud;
 }
 
 @property (weak, nonatomic) IBOutlet UIButton *playButton;
@@ -63,6 +65,14 @@
 //    _fetcher = [[FileFetcher alloc] initWithRoot:NSTemporaryDirectory() MemoryCapacity:0 DiskCapacity:0];
 }
 
+- (void) viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+    _voiceHud = [[POVoiceHUD alloc] initWithParentView:self.view];
+    _voiceHud.title = @"Speak Now";
+    [self.view addSubview:_voiceHud];
+}
+
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
@@ -73,6 +83,7 @@
     NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
 //    NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
 //    NSLog(@"%@", path);
+     ((AmrFilePlayer*)[AmrFilePlayer sharedInstance]).delegate = self;
     [[AmrFilePlayer sharedInstance] startPlayWithFilePath:path];
 }
 
@@ -85,20 +96,17 @@
 
 - (IBAction)startRecord:(id)sender {
     NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-    NSLog(@"%@", fileName);
-    [[AmrFileRecoder sharedInstance] startRecordWithFilePath:fileName];
+    [_voiceHud startForFilePath:fileName];
+
 }
 
 - (IBAction)stopRecord:(id)sender {
 //    [self.recodeButton setTitle:@"开始" forState:UIControlStateNormal];
-   [[AmrFileRecoder sharedInstance] stopRecord];
-    
-   
-    
+   [_voiceHud stopRecording];
 }
 
 - (IBAction)cancelRecord:(id)sender {
-    [[AmrFileRecoder sharedInstance] cancelRecord];
+    [_voiceHud cancelRecording];
 }
 
 - (IBAction)togglePlay:(id)sender {
@@ -144,9 +152,9 @@
 - (void) recordFinished:(double) duration
 {
 //    NSLog(@"recordFinished");
-    NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-    inflateAmrFile( [fileName UTF8String], 1<<22);
-    [self upload];
+//    NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
+    //inflateAmrFile( [fileName UTF8String], 1<<22);
+    //[self upload];
 }
 
 
@@ -184,7 +192,15 @@
     
 }
 
-- (void) playbackStart
+- (void) playbackStart:(NSString*) path
+{
+    
+}
+- (void) playbackProgress:(NSString*) path Expired:(double) expired
+{
+    
+}
+- (void) playbackFinished:(NSString*) path
 {
     
 }

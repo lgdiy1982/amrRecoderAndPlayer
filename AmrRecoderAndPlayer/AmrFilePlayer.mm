@@ -55,6 +55,7 @@ static AmrFilePlayer* instance;
     _filepath = filepath;
     Boolean ret = AudioPlayUnit::instance().startPlay([_filepath UTF8String] );
     if (self.delegate && ret ==  YES) {
+        [[UIDevice currentDevice] setProximityMonitoringEnabled:YES];
         [self.delegate playbackStart:_filepath];
     }
     return ret;
@@ -64,6 +65,7 @@ static AmrFilePlayer* instance;
 {
     Boolean ret = AudioPlayUnit::instance().stopPlay();
     if (self.delegate && ret == YES) {
+        [[UIDevice currentDevice] setProximityMonitoringEnabled:NO];
         [self.delegate playbackFinished:_filepath];
     }
     return ret;
@@ -86,6 +88,7 @@ static AmrFilePlayer* instance;
 - (void) finished
 {
     if (self.delegate) {
+        [[UIDevice currentDevice] setProximityMonitoringEnabled:NO];
         [self.delegate playbackFinished:_filepath];
     }
 }
