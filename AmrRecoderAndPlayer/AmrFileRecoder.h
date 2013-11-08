@@ -27,4 +27,7 @@ void inflateAmrFile(const char* filepath, size_t limit);
 - (Boolean) startRecordWithFilePath:(NSString*) filepath;
 - (Boolean) stopRecord;
 - (Boolean) cancelRecord;
+
+- (void)  updateMeters;
+- (float) averagePowerForChannel:(NSUInteger)channelNumber;
 @end

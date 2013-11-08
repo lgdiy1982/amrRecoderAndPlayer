@@ -607,6 +607,7 @@ size_t DecoderFileThread::feedCallback(void* userData, const ChunkInfoRef info, 
         This->stop();
         return 0;
     }
+    size_t frameSize = 0;
     
     while (true){
         size_t ret;
@@ -616,20 +617,34 @@ size_t DecoderFileThread::feedCallback(void* userData, const ChunkInfoRef info, 
             This->stop();
             return 0;
         }
-        //err data, skip to next frame
-        if (7 != ((buffer[0] & 0x78) >> 3) ) {
-            continue;
+        
+        if (buffer[0] == 0x04) {
+            frameSize = 13;
+        } else if (buffer[0] == 0x0C) {
+            frameSize = 14;
+        } else if (buffer[0] == 0x14) {
+            frameSize = 16;
+        } else if (buffer[0] == 0x1C) {
+            frameSize = 18;
+        } else if (buffer[0] == 0x24) {
+            frameSize = 20;
+        } else if (buffer[0] == 0x2C) {
+            frameSize = 21;
+        } else if (buffer[0] == 0x34) {
+            frameSize = 27;
+        } else if (buffer[0] == 0x3C) {
+            frameSize = 32;
         }
+        
         //read the data
-        ret = fread(buffer+1, 1, 31, This->file);
-        if(ret < 31) {
+        ret = fread(buffer+1, 1, frameSize - 1, This->file);
+        if(ret < frameSize - 1) {
             This->_buffer->terminatedFeed();    //feeding terminated first
             This->stop();
             return 0;
         }
         break;
     }
-    
     Decoder_Interface_Decode(This->_decodeState, buffer, (short*)info->_data, 1);
     return 160*2;
 }

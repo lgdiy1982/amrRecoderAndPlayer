@@ -12,6 +12,20 @@
 #define kOutputBus 0 /*bus 0 represents a stream to output hardware*/
 #define kInputBus 1  /*bus 1 represents a stream from input hardware*/
 
+
+float averageShort(short *arr, size_t count)
+{
+    size_t sum = 0;
+    for (size_t i = 0; i < count; ++i) {
+        if (sum + abs(arr[i]) < sum) { //overflow
+            assert(false);
+        }
+        sum += abs(arr[i]);
+    }
+    return sum / (float)count;
+}
+
+
 #define AMR_MAGIC_NUMBER "#!AMR\n"
 
 typedef struct AUUserData{
@@ -237,7 +251,17 @@ OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
     }
     else
         This->_expired = IceUtil::Time::now().toMilliSeconds() - This->_renderstartTimestamp;
-    if (This->_listener.get()) This->_listener->progress(This->_listener->userData, This->_expired);
+    
+    
+    if (This->_listener.get())  {
+        This->_listener->progress(This->_listener->userData, This->_expired);
+        
+        //calc every channel average
+        //call before the heap recovered
+        for (int i = 0; i < ioData->mNumberBuffers ; ++i) {
+            This->_listener->updateMeter(This->_listener->userData, averageShort( (short*) (ioData->mBuffers[i].mData), inNumberFrames) , i);
+        }
+    }
 	return _auUserData.err;
 }
 

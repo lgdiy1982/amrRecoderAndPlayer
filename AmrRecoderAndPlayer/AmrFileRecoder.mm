@@ -17,6 +17,10 @@
 @interface AmrFileRecoder()
 {
     RecordListener _listener;
+    Boolean        _isUpdatingMeter;
+    float          _preUpdatedMeter;
+    float          _currentUpdatingMeter;
+    float          _currentSliceCount;
 }
 
 @end
@@ -26,6 +30,7 @@
 static AmrFileRecoder* instance = nil;
 static void progress(void* userData, double acumulateDuration);
 static void finished(void* userData, double duration);
+static void updateMeters(void* userData, float average, size_t channel);
 
 @implementation AmrFileRecoder
 + (id) sharedInstance{
@@ -41,6 +46,7 @@ static void finished(void* userData, double duration);
         _listener.userData = (__bridge void*)self;
         _listener.progress = progress;
         _listener.finish = finished;
+        _listener.updateMeter = updateMeters;
         AudioInputUnit::instance().setRecordListener(_listener);
     }
     return self;
@@ -48,7 +54,8 @@ static void finished(void* userData, double duration);
 
 - (Boolean) startRecordWithFilePath:(NSString*) filepath
 {
-    
+    _currentSliceCount = 0;
+    _currentUpdatingMeter = 0.f;
     return AudioInputUnit::instance().start([filepath UTF8String] );
 }
 
@@ -78,6 +85,26 @@ static void finished(void* userData, double duration);
         [self.delegate recordFinished:duration];
     }
 }
+
+- (void) updateMeters : (float) average withChannel:(NSUInteger) channel
+{
+    _currentUpdatingMeter = (_currentSliceCount * _currentUpdatingMeter + average) / (_currentSliceCount + 1);
+    _currentSliceCount++;
+}
+
+
+- (void)  updateMeters
+{
+    _preUpdatedMeter = _currentUpdatingMeter;
+    _currentSliceCount = 0;
+    _currentUpdatingMeter = 0.f;
+}
+
+- (float) averagePowerForChannel:(NSUInteger)channelNumber
+{
+    return _preUpdatedMeter;
+}
+
 @end
 
 void progress(void* userData, double acumulateDuration)
@@ -96,7 +123,13 @@ void finished(void* userData, double duration)
     });
 }
 
-
+void updateMeters(void* userData, float average, size_t channel)
+{
+    AmrFileRecoder* This = (__bridge AmrFileRecoder*)userData;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [This updateMeters:average withChannel:channel];
+    });
+}
 
 
 void inflateAmrFile(const char* filepath, size_t limit)
