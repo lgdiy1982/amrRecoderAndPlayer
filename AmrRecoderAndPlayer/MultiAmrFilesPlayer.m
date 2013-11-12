@@ -46,6 +46,7 @@ static MultiAmrFilesPlayer* instance;
     if (instance == nil) {
         instance = [[MultiAmrFilesPlayer alloc] init];
     }
+    ((AmrFilePlayer*)[AmrFilePlayer sharedInstance]).delegate = instance;
     return instance;
 }
 

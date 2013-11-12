@@ -26,24 +26,24 @@ static void propListener(	void *                inClientData,
     
 }
 
-static void rioInterruptionListener(void *inClientData, UInt32 inInterruption)
-{
-    try {
-        printf("Session interrupted! --- %s ---", inInterruption == kAudioSessionBeginInterruption ? "Begin Interruption" : "End Interruption");
-               if (inInterruption == kAudioSessionEndInterruption) {
-            // make sure we are again the active session
-            XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active");
-//            XThrowIfError(AudioOutputUnitStart(This->_audioUnit), "couldn't start unit");
-        }
-        
-        if (inInterruption == kAudioSessionBeginInterruption) {
-//            XThrowIfError(AudioOutputUnitStop(This->_audioUnit), "couldn't stop unit");
-        }
-    } catch (CAXException e) {
-        char buf[256];
-        fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
-    }
-}
+//static void rioInterruptionListener(void *inClientData, UInt32 inInterruption)
+//{
+//    try {
+//        printf("Session interrupted! --- %s ---", inInterruption == kAudioSessionBeginInterruption ? "Begin Interruption" : "End Interruption");
+//               if (inInterruption == kAudioSessionEndInterruption) {
+//            // make sure we are again the active session
+//            XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active");
+////            XThrowIfError(AudioOutputUnitStart(This->_audioUnit), "couldn't start unit");
+//        }
+//        
+//        if (inInterruption == kAudioSessionBeginInterruption) {
+////            XThrowIfError(AudioOutputUnitStop(This->_audioUnit), "couldn't stop unit");
+//        }
+//    } catch (CAXException e) {
+//        char buf[256];
+//        fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+//    }
+//}
 
 void uncaughtExceptionHandler(NSException *exception) {
     NSLog(@"CRASH: %@", exception);
@@ -64,10 +64,10 @@ void uncaughtExceptionHandler(NSException *exception) {
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
     
     
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(sensorStateChange:)
-                                                 name:@"UIDeviceProximityStateDidChangeNotification"
-                                               object:nil];
+//    [[NSNotificationCenter defaultCenter] addObserver:self
+//                                             selector:@selector(sensorStateChange:)
+//                                                 name:@"UIDeviceProximityStateDidChangeNotification"
+//                                               object:nil];
     return YES;
 }
 
@@ -98,49 +98,54 @@ void uncaughtExceptionHandler(NSException *exception) {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
 
-- (void) sessionInit
-{
-    try {
-        // Initialize and configure the audio session
-        XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, (__bridge void*)self), "couldn't initialize audio session for record");
-        
-        UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
-        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category for record");
-        XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, (__bridge void*)self), "couldn't set property listener");
-        
-        // It is bugs when I unplug the headphones!
-        UInt32 doChangeDefaultRoute = 1;
-        AudioSessionSetProperty (kAudioSessionProperty_OverrideCategoryDefaultToSpeaker, sizeof (doChangeDefaultRoute), &doChangeDefaultRoute);
-        
-        Float32 preferredBufferSize = .01;
-        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
-        
-        Float64 hwSampleRate;
-        UInt32 size = sizeof(hwSampleRate);
-        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
-        
-        XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
-    } catch(CAXException e)  {
-        char buf[256];
-        fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
-    } catch(...) {
-        
-    }
-}
-
-
--(void)sensorStateChange:(NSNotificationCenter *)notification
-{
-    if ([[UIDevice currentDevice] proximityState] == YES)
-    {
-        NSLog(@"Device is close to user");
-    }
-    else
-    {
-        NSLog(@"Device is not close to user");
-        UInt32 doChangeDefaultRoute = 1;
-        AudioSessionSetProperty (kAudioSessionProperty_OverrideCategoryDefaultToSpeaker, sizeof (doChangeDefaultRoute), &doChangeDefaultRoute);
-    }
-}
+//- (void) sessionInit
+//{
+//    try {
+//        // Initialize and configure the audio session
+//        XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, (__bridge void*)self), "couldn't initialize audio session for record");
+//        
+//        UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
+//        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category for record");
+//        XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, (__bridge void*)self), "couldn't set property listener");
+//        
+//        // It is bugs when I unplug the headphones!
+//        UInt32 doChangeDefaultRoute = 1;
+//        AudioSessionSetProperty (kAudioSessionProperty_OverrideCategoryDefaultToSpeaker, sizeof (doChangeDefaultRoute), &doChangeDefaultRoute);
+//        
+//        Float32 preferredBufferSize = .01;
+//        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
+//        
+//        Float64 hwSampleRate;
+//        UInt32 size = sizeof(hwSampleRate);
+//        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
+//        
+//        XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
+//    } catch(CAXException e)  {
+//        char buf[256];
+//        fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+//    } catch(...) {
+//        
+//    }
+//}
+//
+//
+//-(void)sensorStateChange:(NSNotificationCenter *)notification
+//{
+//    if ([[UIDevice currentDevice] proximityState] == YES)
+//    {
+//        UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
+//        AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory);
+//        NSLog(@"proximity == YES");
+//    }
+//    else
+//    {
+//        UInt32 audioRouteOverride = kAudioSessionOverrideAudioRoute_Speaker;  // 1
+//        AudioSessionSetProperty (kAudioSessionProperty_OverrideAudioRoute,                         // 2
+//                                 sizeof (audioRouteOverride),                                      // 3
+//                                 &audioRouteOverride                                               // 4                                 
+//                                 );
+//        NSLog(@"proximity == NO");
+//    }
+//}
 
 @end

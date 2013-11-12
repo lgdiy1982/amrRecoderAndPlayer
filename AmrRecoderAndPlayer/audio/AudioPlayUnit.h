@@ -21,6 +21,8 @@ public:
     static AudioPlayUnit& instance();
     bool startPlay(const char* filepath);
     bool stopPlay();
+    bool pausePlay();
+    bool resume();
     bool isRunning();
     void setPlaybackListener(const PlaybackListener& listener);
 private:

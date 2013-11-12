@@ -15,7 +15,7 @@
 #import "FileFetcher.h"
 #import "MultiAmrFilesPlayer.h"
 #import "POVoiceHUD.h"
-@interface ViewController () <UITableViewDataSource, UITableViewDelegate, PlaybackDelegate, RecodeDelegate, MultiPlaybackDelegate>
+@interface ViewController () <PlaybackDelegate, RecodeDelegate, MultiPlaybackDelegate>
 {
     ASIFormDataRequest *request;
     IBOutletCollection(UIButton) NSArray *amrPlayerButtons;
@@ -81,10 +81,15 @@
 
 - (IBAction)play:(id)sender {
     NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-//    NSString * path = [[NSBundle mainBundle] pathForResource: @"raw_amr.amr" ofType: nil];
-//    NSLog(@"%@", path);
      ((AmrFilePlayer*)[AmrFilePlayer sharedInstance]).delegate = self;
-    [[AmrFilePlayer sharedInstance] startPlayWithFilePath:path];
+    if ( [self.playButton.titleLabel.text isEqualToString: @"play"] ) {
+        [[AmrFilePlayer sharedInstance] startPlayWithFilePath:path];
+        [((UIButton*)sender) setTitle:@"stop" forState: UIControlStateNormal];
+    } else {
+        [[AmrFilePlayer sharedInstance]  stopPlayback];
+        [self.playButton setTitle:@"play" forState: UIControlStateNormal];
+    }
+    
 }
 
 
@@ -101,7 +106,6 @@
 }
 
 - (IBAction)stopRecord:(id)sender {
-//    [self.recodeButton setTitle:@"开始" forState:UIControlStateNormal];
    [_voiceHud stopRecording];
 }
 
@@ -111,8 +115,6 @@
 
 - (IBAction)togglePlay:(id)sender {
     NSUInteger index = [amrPlayerButtons indexOfObject:sender];
-    //NSUInteger index = ((UIButton*)sender).tag;
-//    NSLog(@"%@", ((UIButton*)sender).titleLabel.text);
     if ([@"play" isEqualToString:((UIButton*)sender).titleLabel.text ]) {
         [[MultiAmrFilesPlayer sharedInstance] startPlayWithURL: [NSURL URLWithString: [_urls objectAtIndex:index]] ];
     }
@@ -121,9 +123,6 @@
     }
 }
 
-#pragma -mark tableview delegate
-
-#pragma -mark tableview datasource
 
 
 - (void)viewDidUnload {
@@ -133,16 +132,8 @@
     [super viewDidUnload];
 }
 
-- (void) playbackProgress:(double) expired
-{
-//    NSLog(@"playbackProgress %f %f", expired, duration);
-}
 
-- (void) playbackFinished
-{
-//    NSLog(@"playbackFinished");
-}
-
+#pragma -mark record delegate
 
 - (void) recordProgress:(double) acumulateDuration
 {
@@ -153,8 +144,8 @@
 {
 //    NSLog(@"recordFinished");
 //    NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-    //inflateAmrFile( [fileName UTF8String], 1<<22);
-    //[self upload];
+//    inflateAmrFile( [fileName UTF8String], 1<<22);
+//    [self upload];
 }
 
 
@@ -192,6 +183,8 @@
     
 }
 
+#pragma -mark playback delegate
+
 - (void) playbackStart:(NSString*) path
 {
     
@@ -202,7 +195,7 @@
 }
 - (void) playbackFinished:(NSString*) path
 {
-    
+    [self.playButton setTitle:@"play" forState: UIControlStateNormal];
 }
 //- ()
 

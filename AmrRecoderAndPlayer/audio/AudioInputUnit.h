@@ -15,6 +15,7 @@ extern "C"
         void (*progress)(void* userData, double totalDuration);
         void (*finish)(void* userData, double duration);
         void (*updateMeter) (void* userData, float averageMeter, size_t channel);
+        void (*updatePeakMeter) (void* userData, float peakPower, size_t channel);
     };
 #ifdef __cplusplus
 } //end extern "C"

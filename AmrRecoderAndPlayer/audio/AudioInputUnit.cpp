@@ -12,7 +12,6 @@
 #define kOutputBus 0 /*bus 0 represents a stream to output hardware*/
 #define kInputBus 1  /*bus 1 represents a stream from input hardware*/
 
-
 float averageShort(short *arr, size_t count)
 {
     size_t sum = 0;
@@ -25,6 +24,16 @@ float averageShort(short *arr, size_t count)
     return sum / (float)count;
 }
 
+float maxShort(short *arr, size_t count)
+{
+    double maxV = 0;
+    for (size_t i = 0; i < count; ++i) {
+        if (maxV < abs(arr[i])) {
+            maxV = abs(arr[i]);
+        }
+    }
+    return maxV;
+}
 
 #define AMR_MAGIC_NUMBER "#!AMR\n"
 
@@ -81,6 +90,11 @@ typedef std::auto_ptr<RecordListener> RecordListenerPtr;
 class AudioInputUnit_context
 {
 public:
+	static void rioInterruptionListener(void *inClientData, UInt32 inInterruptionState);
+    static void propListener(	void *                  inClientData,
+                             AudioSessionPropertyID	inID,
+                             UInt32                  inDataSize,
+                             const void *            inData);
     friend class AudioInputUnit;
     AudioInputUnit_context();
     ~AudioInputUnit_context();
@@ -129,6 +143,16 @@ AudioInputUnit_context::~AudioInputUnit_context()
 }
 
 
+void AudioInputUnit_context::propListener(	void *                  inClientData,
+                                          AudioSessionPropertyID	inID,
+                                          UInt32                  inDataSize,
+                                          const void *            inData)
+{
+    
+}
+
+
+
 int AudioInputUnit_context::initialize() {
     
     try {
@@ -154,18 +178,24 @@ int AudioInputUnit_context::initialize() {
 
 bool AudioInputUnit_context::isRunning()
 {
-	OSStatus err = noErr;
 	UInt32 auhalRunning = 0, size = 0;
     
 	size = sizeof(auhalRunning);
 	if(_audioUnit)
 	{
-		err = AudioUnitGetProperty(_audioUnit,
-                                   kAudioOutputUnitProperty_IsRunning,
-                                   kAudioUnitScope_Global,
-                                   kInputBus, // input element
-                                   &auhalRunning,
-                                   &size);
+        try {
+            XThrowIfError( AudioUnitGetProperty(_audioUnit, kAudioOutputUnitProperty_IsRunning, kAudioUnitScope_Global, kInputBus, &auhalRunning, &size), "cann't get property isRunning");
+        }
+        catch (CAXException &e) {
+            char buf[256];
+            fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+            return false;
+        }
+        catch (...) {
+            fprintf(stderr, "An unknown error occurred\n");
+            return false;
+        }
+        
 	}
     return auhalRunning;
 }
@@ -176,6 +206,7 @@ bool AudioInputUnit_context::isRunning()
 
 size_t AudioInputUnit_context::feedCallBackFun(void* userData, const ChunkInfoRef info,  bool terminated)
 {
+    
     AUUserData& _auUserData = (AUUserData&)*userData;
     AudioInputUnit_context *This = (AudioInputUnit_context*)_auUserData.inRefCon;
     
@@ -193,20 +224,24 @@ size_t AudioInputUnit_context::feedCallBackFun(void* userData, const ChunkInfoRe
     }
     
     //Get the new audio data
+    
 	_auUserData.err = AudioUnitRender(This->_audioUnit,
                                       _auUserData.ioActionFlags,
                                       _auUserData.inTimeStamp,
                                       _auUserData.inBusNumber,
                                       _auUserData.inNumberFrames, /* of frames requested*/
                                       _auUserData.ioData );/* Audio Buffer List to hold data*/
-    
     //do some meter operation
     if (This->_listener.get())  {
         
         //calc every channel average
         //call before the heap recovered
         for (int i = 0; i < _auUserData.ioData->mNumberBuffers ; ++i) {
-            This->_listener->updateMeter(This->_listener->userData, averageShort( (short*) (_auUserData.ioData->mBuffers[i].mData), _auUserData.ioData->mBuffers[i].mDataByteSize/2) , i);
+            double average = averageShort( (short*) (_auUserData.ioData->mBuffers[0].mData), _auUserData.ioData->mBuffers[0].mDataByteSize/2);
+            double peakPower = maxShort((short*) (_auUserData.ioData->mBuffers[0].mData), _auUserData.ioData->mBuffers[0].mDataByteSize/2);
+            This->_listener->updateMeter(This->_listener->userData,  average, 0);
+            This->_listener->updatePeakMeter(This->_listener->userData,  peakPower, 0);
+            
         }
     }
     return info->_size;
@@ -219,27 +254,8 @@ OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
                                                    UInt32 inNumberFrames,
                                                    AudioBufferList * ioData)
 {
-    AudioInputUnit_context *This = (AudioInputUnit_context *)inRefCon;
-    if(This->_renderstartTimestamp == 0)
-    {
-        This->_renderstartTimestamp = IceUtil::Time::now().toMilliSeconds();
-        This->_expired = 0;
-    }
-    else
-        This->_expired = IceUtil::Time::now().toMilliSeconds() - This->_renderstartTimestamp;
     
-    
-    if (This->_listener.get())  {
-        This->_listener->progress(This->_listener->userData, This->_expired);
-        
-        //calc every channel average
-        //call before the heap recovered
-//        for (int i = 0; i < ioData->mNumberBuffers ; ++i) {
-//            This->_listener->updateMeter(This->_listener->userData, averageShort( (short*) (ioData->mBuffers[i].mData), inNumberFrames) , i);
-//        }
-    }
-    
-	
+	AudioInputUnit_context *This = (AudioInputUnit_context *)inRefCon;
     
     static AUUserData _auUserData = {0};
     _auUserData.inRefCon = This;
@@ -252,8 +268,18 @@ OSStatus AudioInputUnit_context::recordingCallback(void *inRefCon,
     
     This->chunk._callback = AudioInputUnit_context::feedCallBackFun;
     This->chunk._userData =&_auUserData;
-    This->_buffer->feed(inNumberFrames * This->_audioFormat.mBytesPerFrame, &This->chunk);
+    This->_buffer->feed(inNumberFrames * This->_audioFormat.mBytesPerPacket, &This->chunk);
     if (_auUserData.err) { SP::printf("render: error %d\n", (int)_auUserData.err);}
+    
+    
+    if(This->_renderstartTimestamp == 0)
+    {
+        This->_renderstartTimestamp = IceUtil::Time::now().toMilliSeconds();
+        This->_expired = 0;
+    }
+    else
+        This->_expired = IceUtil::Time::now().toMilliSeconds() - This->_renderstartTimestamp;
+    if (This->_listener.get()) This->_listener->progress(This->_listener->userData, This->_expired);
 	return _auUserData.err;
 }
 
@@ -324,6 +350,8 @@ bool AudioInputUnit_context::cancel()
 {
     try {
         if (!isRunning()) return true;
+        
+        XThrowIfError(AudioSessionRemovePropertyListenerWithUserData(kAudioSessionProperty_AudioRouteChange, propListener, this), "could not remove PropertyListener");
         XThrowIfError(AudioOutputUnitStop(_audioUnit), "couldn't stop record audio unit");
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "couldn't uninitialize record audio unit");
         XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose record unit");
@@ -365,9 +393,8 @@ AudioInputUnit& AudioInputUnit::instance()
 }
 
 AudioInputUnit::AudioInputUnit()
-{
-    _ctx = std::auto_ptr< AudioInputUnit_context>(new AudioInputUnit_context);
-}
+:_ctx ( std::auto_ptr< AudioInputUnit_context>(new AudioInputUnit_context) )
+{}
 
 
 bool AudioInputUnit::start(const char* path)
@@ -415,9 +442,10 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, const AURenderCallbackStruct& inRe
 		XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input, kInputBus, &one, sizeof(one)), "couldn't enable record on the remote I/O unit");
         one = 0;
         XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputBus, &one, sizeof(one)), "couldn't disable play on the remote I/O unit");
-        
+        outFormat.Print();
         XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioOutputUnitProperty_SetInputCallback , kAudioUnitScope_Input, kInputBus, &inRenderProc, sizeof(inRenderProc)), "couldn't set remote i/o render callback");
 		XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, kInputBus, &outFormat, sizeof(outFormat)), "couldn't set the remote I/O unit's input client format");
+        
         // Disable buffer allocation for the recorder (optional - do this if we want to pass in our own)
         UInt32 flag = 0;
         XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_ShouldAllocateBuffer, kAudioUnitScope_Output, kInputBus, &flag, sizeof(flag)), "Could not disable buffer allocation for the recorder");
@@ -477,9 +505,9 @@ void EncodeThread::run()
     do {
         _buffer->eat(160*2, &_cbChunk);
     } while (!_destroy && !_cancel);
-    Encoder_Interface_exit(armEncodeState);
     
     fclose(file);
+    Encoder_Interface_exit(armEncodeState);
     if (_cancel) {
         ::remove(_filepath.c_str());
         SP::printf("remove file\n");
@@ -582,6 +610,4 @@ void processBuffer(AudioBufferList* audioBufferList, float gain)
         }
     }
 }
-
-
 

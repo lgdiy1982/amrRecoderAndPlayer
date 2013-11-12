@@ -96,7 +96,7 @@
     [[AmrFileRecoder sharedInstance] updateMeters];
     
     
-    NSLog(@"meter:%5f", [[AmrFileRecoder sharedInstance] averagePowerForChannel:0]);
+    NSLog(@"meter:%5f", [[AmrFileRecoder sharedInstance] peakPowerForChannel:0]);
 //    if (([[AmrFileRecoder sharedInstance] averagePowerForChannel:0] < -60.0) && (recordTime > 3.0)) {
 //        [self commitRecording];
 //        return;

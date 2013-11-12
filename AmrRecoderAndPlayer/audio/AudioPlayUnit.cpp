@@ -55,7 +55,6 @@ private:
     FILE *file;
     BufferChunk    _cbChunk;
     void*          _decodeState;
-    
 };
 
 typedef IceUtil::Handle<DecoderFileThread> DecoderFileThreadPtr;
@@ -78,6 +77,8 @@ public:
     
     bool start(const char* filepath);
     bool stop();
+    bool pause();
+    bool resume();
     bool passiveStop();
     bool isRunning();
     void notifyEnd();   //called in render thread
@@ -109,6 +110,7 @@ private:
     
     double               _renderstartTimestamp;
     unsigned char _filebuffer[1<<20];
+    bool                _paused;
 };
 
 //---
@@ -394,6 +396,56 @@ bool AudioPlayUnit_context::stop()
     return  true;
 }
 
+bool AudioPlayUnit_context::resume()
+{
+    Mutex::Lock lock(_mutex);
+    try {
+        if (!_paused || !_audioUnit) {
+            return false;
+        }
+        _paused = false;
+        XThrowIfError(initialize() , "initialize play audio unit error");
+        XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
+        SP::printf("\n========= resume\n");
+    }
+    catch (CAXException &e) {
+		char buf[256];
+		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        
+		return false;
+	}
+	catch (...) {
+		fprintf(stderr, "An unknown error occurred\n");
+		return false;
+	}
+    return true;
+}
+
+bool AudioPlayUnit_context::pause()
+{
+    Mutex::Lock lock(_mutex);
+    try {
+        if (!isRunning()) {
+            return false;
+        }
+        _paused = true;
+        XThrowIfError(AudioOutputUnitStop(_audioUnit), "could not stop playback unit");
+        XThrowIfError(AudioUnitUninitialize(_audioUnit), "could not uninitialize playback unit");
+        XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose playback unit");
+        SP::printf("\n========= pause\n");
+    }
+    catch (CAXException &e) {
+		char buf[256];
+		fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+        
+		return true;
+	}
+	catch (...) {
+		fprintf(stderr, "An unknown error occurred\n");
+		return false;
+	}
+    return false;
+}
 
 bool AudioPlayUnit_context::passiveStop()
 {
@@ -453,6 +505,16 @@ bool AudioPlayUnit::startPlay(const char* filepath)
 bool AudioPlayUnit::stopPlay()
 {
     return _ctx->stop();
+}
+
+bool AudioPlayUnit::resume()
+{
+    return _ctx->resume();
+}
+
+bool AudioPlayUnit::pausePlay()
+{
+    return _ctx->pause();
 }
 
 bool AudioPlayUnit::isRunning()
