@@ -14,32 +14,6 @@
 #import <AudioToolbox/AudioToolbox.h>
 
 
-static void propListener(void *                inClientData,
-                         AudioSessionPropertyID	inID,
-                         UInt32                  inDataSize,
-                         const void *            inData)
-{
-    
-}
-
-static void rioInterruptionListener(void *inClientData, UInt32 inInterruption)
-{
-    try {
-        printf("Session interrupted! --- %s ---", inInterruption == kAudioSessionBeginInterruption ? "Begin Interruption" : "End Interruption");
-        if (inInterruption == kAudioSessionEndInterruption) {
-            // make sure we are again the active session
-            XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active");
-            //            XThrowIfError(AudioOutputUnitStart(This->_audioUnit), "couldn't start unit");
-        }
-        
-        if (inInterruption == kAudioSessionBeginInterruption) {
-            //            XThrowIfError(AudioOutputUnitStop(This->_audioUnit), "couldn't stop unit");
-        }
-    } catch (CAXException e) {
-        char buf[256];
-        fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
-    }
-}
 
 @interface AmrFilePlayer()
 {
@@ -71,7 +45,7 @@ static AmrFilePlayer* instance;
                                                  selector:@selector(sensorStateChange:)
                                                      name:UIDeviceProximityStateDidChangeNotification
                                                    object:nil];
-        //[self sessionInit];
+        [self sessionInit];
     }
     return self;
 }
@@ -80,16 +54,18 @@ static AmrFilePlayer* instance;
 - (void) sessionInit
 {
     try {
-        // Initialize and configure the audio session
-        XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, (__bridge void*)self), "couldn't initialize audio session for record");
-        
-        UInt32 audioCategory = kAudioSessionCategory_MediaPlayback;
-        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category for record");
-        XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, (__bridge void*)self), "couldn't set property listener");
+        UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
+        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category for playback");
 
         
         Float32 preferredBufferSize = .002;
         XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
+        
+        UInt32 audioRouteOverride = kAudioSessionOverrideAudioRoute_Speaker;
+        XThrowIfError(AudioSessionSetProperty (kAudioSessionProperty_OverrideAudioRoute, sizeof (audioRouteOverride), &audioRouteOverride), "couldn't set AudioRoute to speaker") ;
+//        Float64 hwSampleRate;
+//        UInt32 size = sizeof(hwSampleRate);
+//        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
         
         XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
     } catch(CAXException e)  {
@@ -148,6 +124,8 @@ static AmrFilePlayer* instance;
 - (void) finished
 {
     if (self.delegate) {
+        UInt32 audioRouteOverride = kAudioSessionOverrideAudioRoute_Speaker;
+        XThrowIfError(AudioSessionSetProperty (kAudioSessionProperty_OverrideAudioRoute, sizeof (audioRouteOverride), &audioRouteOverride), "couldn't set AudioRoute to speaker") ;
         [[UIDevice currentDevice] setProximityMonitoringEnabled:NO];
         [self.delegate playbackFinished:_filepath];
     }
@@ -158,25 +136,23 @@ static AmrFilePlayer* instance;
 {
     if ([[UIDevice currentDevice] proximityState] == YES)
     {
+        NSLog(@"proximity == YES");
         //uninit audio unit
         AudioPlayUnit::instance().pausePlay();
+        
         //
         
         try {
-            //XThrowIfError(AudioSessionSetActive(NO), "couldn't set audio session deactive\n");
+            XThrowIfError(AudioSessionSetActive(NO), "couldn't set audio session deactive\n");
             
             UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
-            XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category for record");
-            XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, (__bridge void*)self), "couldn't set property listener");
-
-            Float32 preferredBufferSize = .002;
-            XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
-      
+            XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category for PlayAndRecord");
+            
             UInt32 audioRouteOverride = kAudioSessionOverrideAudioRoute_None;
-            XThrowIfError(AudioSessionSetProperty (kAudioSessionProperty_OverrideAudioRoute, sizeof (audioRouteOverride), &audioRouteOverride), "couldn't set AudioRoute") ;
+            XThrowIfError(AudioSessionSetProperty (kAudioSessionProperty_OverrideAudioRoute, sizeof (audioRouteOverride), &audioRouteOverride), "couldn't set AudioRoute to reciver") ;
             
             
-            //XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
+            XThrowIfError(AudioSessionSetActive(YES), "couldn't set audio session active\n");
         } catch(CAXException e)  {
             char buf[256];
             fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
