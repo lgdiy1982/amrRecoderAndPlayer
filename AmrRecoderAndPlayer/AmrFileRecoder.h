@@ -29,4 +29,5 @@ void inflateAmrFile(const char* filepath, size_t limit);
 
 - (void)  updateMeters;
 - (float) averagePowerForChannel:(NSUInteger)channelNumber;
+- (float) peakPowerForChannel:(NSUInteger) channleNumber;
 @end

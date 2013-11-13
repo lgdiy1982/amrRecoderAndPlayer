@@ -413,6 +413,11 @@ bool AudioInputUnit::cancel()
     return _ctx->cancel();
 }
 
+bool AudioInputUnit::isRunning()
+{
+    return _ctx->isRunning();
+}
+
 void AudioInputUnit::setRecordListener(const RecordListener& listener)
 {
     _ctx->setRecordListener(listener);

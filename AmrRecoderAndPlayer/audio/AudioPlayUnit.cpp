@@ -79,6 +79,7 @@ public:
     bool stop();
     bool pause();
     bool resume();
+    bool isPaused();
     bool passiveStop();
     bool isRunning();
     void notifyEnd();   //called in render thread
@@ -123,6 +124,7 @@ AudioPlayUnit_context::AudioPlayUnit_context()
 
 {
     _isInitialized = false;
+    _paused = false;
     setupBuffers();
 }
 
@@ -156,8 +158,6 @@ int AudioPlayUnit_context::initialize() {
         callbackStruct.inputProc = AudioPlayUnit_context::playbackCallback;
         callbackStruct.inputProcRefCon = this;
         _audioFormat = CAStreamBasicDescription(8000.f, 1, CAStreamBasicDescription::kPCMFormatInt16, false);
-        //_audioFormat.mFormatFlags = kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger;
-        _audioFormat.Print();
         XThrowIfError(SetupRemoteIO(_audioUnit, callbackStruct, _audioFormat), "couldn't setup remote i/o unit");
     }
     catch (CAXException &e) {
@@ -396,6 +396,12 @@ bool AudioPlayUnit_context::stop()
     return  true;
 }
 
+bool AudioPlayUnit_context::isPaused()
+{
+    Mutex::Lock lock(_mutex);
+    return _paused;
+}
+
 bool AudioPlayUnit_context::resume()
 {
     Mutex::Lock lock(_mutex);
@@ -406,7 +412,6 @@ bool AudioPlayUnit_context::resume()
         _paused = false;
         XThrowIfError(initialize() , "initialize play audio unit error");
         XThrowIfError(AudioOutputUnitStart(_audioUnit), "");
-        SP::printf("\n========= resume\n");
     }
     catch (CAXException &e) {
 		char buf[256];
@@ -432,7 +437,6 @@ bool AudioPlayUnit_context::pause()
         XThrowIfError(AudioOutputUnitStop(_audioUnit), "could not stop playback unit");
         XThrowIfError(AudioUnitUninitialize(_audioUnit), "could not uninitialize playback unit");
         XThrowIfError(AudioComponentInstanceDispose(_audioUnit), "could not Dispose playback unit");
-        SP::printf("\n========= pause\n");
     }
     catch (CAXException &e) {
 		char buf[256];
@@ -510,6 +514,11 @@ bool AudioPlayUnit::stopPlay()
 bool AudioPlayUnit::resume()
 {
     return _ctx->resume();
+}
+
+bool AudioPlayUnit::isPaused()
+{
+    return _ctx->isPaused();
 }
 
 bool AudioPlayUnit::pausePlay()

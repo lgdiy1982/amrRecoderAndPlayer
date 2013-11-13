@@ -11,7 +11,8 @@
 #include <SP.h>
 #include <HexDump.h>
 //////////////////////////////
-
+#include <CAXException.h>
+#import <AudioToolbox/AudioToolbox.h>
 
 
 @interface AmrFileRecoder()
@@ -58,10 +59,39 @@ static void updatePeakMeter(void* userData, float peakPower, size_t channel);
     return self;
 }
 
+- (void) setRecordSession
+{
+    try {
+        UInt32 audioCategory = kAudioSessionCategory_RecordAudio;
+        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category for playback");
+        
+        
+        Float32 preferredBufferSize = .002;
+        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
+        
+        XThrowIfError(AudioSessionSetActive(YES), "couldn't set audio session active\n");
+    } catch(CAXException e)  {
+        char buf[256];
+        fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
+    } catch(...) {
+        fprintf(stderr, "An unknown error occurred\n");
+    }
+}
+
+- (void) deactiveRecordSession
+{
+    XThrowIfError(AudioSessionSetActive(NO), "couldn't set audio session active\n");
+}
+
 - (Boolean) startRecordWithFilePath:(NSString*) filepath
 {
-    _sampleMeter =  _peakSamperMeter = 33.f;
+    if (AudioInputUnit::instance().isRunning()) {
+        return NO;
+    }
+    
+    [self setRecordSession];
     _currentSliceCount = 0;
+    _sampleMeter = _peakSamperMeter = 33.f;
     _currentUpdatingMeter = 33.f;
     _currentPeakMeter = 33.f;
     return AudioInputUnit::instance().start([filepath UTF8String] );
@@ -69,7 +99,11 @@ static void updatePeakMeter(void* userData, float peakPower, size_t channel);
 
 - (Boolean) stopRecord
 {
-    return AudioInputUnit::instance().stop();
+    Boolean ret = AudioInputUnit::instance().stop();
+    if (ret) {
+        [self deactiveRecordSession];
+    }
+    return ret;
 }
 
 - (Boolean) cancelRecord

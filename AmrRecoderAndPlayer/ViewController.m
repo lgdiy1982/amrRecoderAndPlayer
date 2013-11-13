@@ -100,6 +100,7 @@
 
 
 - (IBAction)startRecord:(id)sender {
+    [[AmrFilePlayer sharedInstance]  stopPlayback];
     NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
     [_voiceHud startForFilePath:fileName];
 
@@ -143,8 +144,8 @@
 - (void) recordFinished:(double) duration
 {
 //    NSLog(@"recordFinished");
-//    NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
-//    inflateAmrFile( [fileName UTF8String], 1<<22);
+    NSString *fileName = [NSTemporaryDirectory() stringByAppendingPathComponent: @"test.amr"] ;
+    inflateAmrFile( [fileName UTF8String], 1<<22);
 //    [self upload];
 }
 

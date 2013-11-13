@@ -30,9 +30,10 @@ static void rioInterruptionListener(void *inClientData, UInt32 inInterruption)
 {
     try {
         printf("Session interrupted! --- %s ---", inInterruption == kAudioSessionBeginInterruption ? "Begin Interruption" : "End Interruption");
-               if (inInterruption == kAudioSessionEndInterruption) {
+        if (inInterruption == kAudioSessionEndInterruption)
+        {
             // make sure we are again the active session
-            XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active");
+//            XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active");
 //            XThrowIfError(AudioOutputUnitStart(This->_audioUnit), "couldn't start unit");
         }
         
@@ -56,6 +57,8 @@ void uncaughtExceptionHandler(NSException *exception) {
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    [self sessionInit];
+//    [[UIDevice currentDevice] setProximityMonitoringEnabled:YES];
     // Override point for customization after application launch.
     self.viewController = [[ViewController alloc] initWithNibName:@"ViewController" bundle:nil];
     self.window.rootViewController = self.viewController;
@@ -63,7 +66,7 @@ void uncaughtExceptionHandler(NSException *exception) {
 
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
     
-    [self sessionInit];
+    
     
 //    [[NSNotificationCenter defaultCenter] addObserver:self
 //                                             selector:@selector(sensorStateChange:)
@@ -113,9 +116,9 @@ void uncaughtExceptionHandler(NSException *exception) {
 //        UInt32 doChangeDefaultRoute = 1;
 //        AudioSessionSetProperty (kAudioSessionProperty_OverrideCategoryDefaultToSpeaker, sizeof (doChangeDefaultRoute), &doChangeDefaultRoute);
 //        
-//        Float32 preferredBufferSize = .01;
-//        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
-//        
+        Float32 preferredBufferSize = .01;
+        XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
+//
 //        Float64 hwSampleRate;
 //        UInt32 size = sizeof(hwSampleRate);
 //        XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");

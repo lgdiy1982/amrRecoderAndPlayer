@@ -22,6 +22,7 @@ public:
     bool startPlay(const char* filepath);
     bool stopPlay();
     bool pausePlay();
+    bool isPaused();
     bool resume();
     bool isRunning();
     void setPlaybackListener(const PlaybackListener& listener);

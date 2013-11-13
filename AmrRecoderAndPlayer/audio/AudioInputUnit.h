@@ -31,8 +31,8 @@ public:
     bool start(const char* path);
     bool stop();
     bool cancel();
+    bool isRunning();
     
-    //bool isRunning();
     void setRecordListener(const RecordListener& listener);
 private:
     AudioInputUnit();
